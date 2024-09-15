@@ -103,6 +103,17 @@ static void cleanup_opposing(std::list<Segment>& segs)
         }
     }
 
+
+  // move same direction segments to one end of the list, so they can
+  // be coalesced when the polygon is created
+  if(!segs.empty())
+    {
+      while(segs.front().dir == segs.back().dir)
+        {
+          segs.splice(segs.end(), segs, segs.begin());
+        }
+    }
+
   // also remove opposing front and back of segments
   while(!segs.empty() && opposing(segs.front(), segs.back()))
     {
@@ -133,6 +144,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
 
       lastdir = s.dir;
     }
+
   return retn;
 }
 
@@ -188,9 +200,7 @@ std::vector<Poly> mask_to_polygons(const Image<int>& inmask)
           Segment newseg1, newseg2, newseg3;
 
           // If there's a neighbouring unprocessed pixel we replace
-          // the line segment with one which goes around it. Note that
-          // the insert ordering is backward compared to what gets
-          // added to the list.
+          // the line segment with one which goes around it.
           bool repl = false; // replaced segment?
           switch(sit->dir)
             {
