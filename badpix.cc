@@ -112,7 +112,7 @@ const PolyVec& BadPixTable::getPolyMask(double t)
       // (FIXME: assumes 384 pixels)
       cache_poly.clear();
       constexpr int tile_size = 32;
-      constexpr int num_tile = 12;
+      constexpr int num_tile = 384/tile_size + (384%tile_size != 0);
       for(int yt=0;yt<num_tile;++yt)
         for(int xt=0;xt<num_tile;++xt)
           {
@@ -121,10 +121,26 @@ const PolyVec& BadPixTable::getPolyMask(double t)
                                           tile_size, tile_size);
             // make polygons
             auto polys = mask_to_polygons(rect);
+
             // add to cached list of polygons
             const Point p0(xt*tile_size+0.5f, yt*tile_size+0.5f);
             for(auto& poly : polys)
-              cache_poly.emplace_back(poly + p0);
+              {
+                // if(xt==3 && yt==799)
+                //   {
+                //     for(int y=0;y<tile_size;y++) {
+                //       for(int x=0;x<tile_size;++x) {
+                //         std::printf("%c", rect(x,y)>0 ? '#' : '.');
+                //       }
+                //       std::printf("\n");
+                //     }
+                //     for(auto pt : poly.pts) {
+                //       std::printf("%g %g\n", pt.x, pt.y);
+                //     }
+                //   }
+                // std::printf("%d, %d, %ld\n", xt, yt, poly.size());
+                cache_poly.emplace_back(poly + p0);
+              }
           }
 
     }

@@ -194,110 +194,120 @@ PolyVec mask_to_polygons(const Image<int>& inmask)
         mask(x0,y0) = polyidx;
       }
 
-      for(auto sit = segs.begin(); sit != segs.end(); )
+      for(;;)
         {
-          const int x = sit->x;
-          const int y = sit->y;
-          Segment newseg1, newseg2, newseg3;
-
-          // If there's a neighbouring unprocessed pixel we replace
-          // the line segment with one which goes around it.
-          bool repl = false; // replaced segment?
-          switch(sit->dir)
+          bool anyrepl=false;
+          for(auto sit = segs.begin(); sit != segs.end(); )
             {
-            case RIGHT:
-              if(y<yw && mask(x,y)<0)
-                {
-                  newseg1 = Segment(x,   y,   UP);
-                  newseg2 = Segment(x,   y+1, RIGHT);
-                  newseg3 = Segment(x+1, y+1, DOWN);
-                  mask(x,y) = polyidx;
-                  repl = true;
-                }
-              else if(y>0 && mask(x,y-1)<0)
-                {
-                  newseg1 = Segment(x,   y,   DOWN);
-                  newseg2 = Segment(x,   y-1, RIGHT);
-                  newseg3 = Segment(x+1, y-1, UP);
-                  mask(x,y-1) = polyidx;
-                  repl = true;
-                }
-              break;
+              const int x = sit->x;
+              const int y = sit->y;
+              Segment newseg1, newseg2, newseg3;
 
-            case DOWN:
-              if(x<xw && mask(x,y-1)<0)
+              // If there's a neighbouring unprocessed pixel we replace
+              // the line segment with one which goes around it.
+              bool repl = false; // replaced segment?
+              switch(sit->dir)
                 {
-                  newseg1 = Segment(x,   y,   RIGHT);
-                  newseg2 = Segment(x+1, y,   DOWN);
-                  newseg3 = Segment(x+1, y-1, LEFT);
-                  mask(x,y-1) = polyidx;
-                  repl = true;
-                }
-              else if(x>0 && mask(x-1,y-1)<0)
-                {
-                  newseg1 = Segment(x,   y,   LEFT);
-                  newseg2 = Segment(x-1, y,   DOWN);
-                  newseg3 = Segment(x-1, y-1, RIGHT);
-                  mask(x-1,y-1) = polyidx;
-                  repl = true;
-                }
-              break;
+                case RIGHT:
+                  if(y<yw && mask(x,y)<0)
+                    {
+                      newseg1 = Segment(x,   y,   UP);
+                      newseg2 = Segment(x,   y+1, RIGHT);
+                      newseg3 = Segment(x+1, y+1, DOWN);
+                      mask(x,y) = polyidx;
+                      repl = true;
+                    }
+                  else if(y>0 && mask(x,y-1)<0)
+                    {
+                      newseg1 = Segment(x,   y,   DOWN);
+                      newseg2 = Segment(x,   y-1, RIGHT);
+                      newseg3 = Segment(x+1, y-1, UP);
+                      mask(x,y-1) = polyidx;
+                      repl = true;
+                    }
+                  break;
 
-            case LEFT:
-              if(y<yw && mask(x-1,y)<0)
-                {
-                  newseg1 = Segment(x,   y,   UP);
-                  newseg2 = Segment(x,   y+1, LEFT);
-                  newseg3 = Segment(x-1, y+1, DOWN);
-                  mask(x-1,y) = polyidx;
-                  repl = true;
-                }
-              else if(y>0 && mask(x-1,y-1)<0)
-                {
-                  newseg1 = Segment(x,   y,   DOWN);
-                  newseg2 = Segment(x,   y-1, LEFT);
-                  newseg3 = Segment(x-1, y-1, UP);
-                  mask(x-1,y-1) = polyidx;
-                  repl = true;
-                }
-              break;
+                case DOWN:
+                  if(x<xw && mask(x,y-1)<0)
+                    {
+                      newseg1 = Segment(x,   y,   RIGHT);
+                      newseg2 = Segment(x+1, y,   DOWN);
+                      newseg3 = Segment(x+1, y-1, LEFT);
+                      mask(x,y-1) = polyidx;
+                      repl = true;
+                    }
+                  else if(x>0 && mask(x-1,y-1)<0)
+                    {
+                      newseg1 = Segment(x,   y,   LEFT);
+                      newseg2 = Segment(x-1, y,   DOWN);
+                      newseg3 = Segment(x-1, y-1, RIGHT);
+                      mask(x-1,y-1) = polyidx;
+                      repl = true;
+                    }
+                  break;
 
-            case UP:
-              if(x>0 && mask(x-1,y)<0)
-                {
-                  newseg1 = Segment(x,   y,   LEFT);
-                  newseg2 = Segment(x-1, y,   UP);
-                  newseg3 = Segment(x-1, y+1, RIGHT);
-                  mask(x-1,y) = polyidx;
-                  repl = true;
-                }
-              else if(x<xw && mask(x,y)<0)
-                {
-                  newseg1 = Segment(x,   y,   RIGHT);
-                  newseg2 = Segment(x+1, y,   UP);
-                  newseg3 = Segment(x+1, y+1, LEFT);
-                  mask(x,y) = polyidx;
-                  repl = true;
-                }
-              break;
+                case LEFT:
+                  if(y<yw && mask(x-1,y)<0)
+                    {
+                      newseg1 = Segment(x,   y,   UP);
+                      newseg2 = Segment(x,   y+1, LEFT);
+                      newseg3 = Segment(x-1, y+1, DOWN);
+                      mask(x-1,y) = polyidx;
+                      repl = true;
+                    }
+                  else if(y>0 && mask(x-1,y-1)<0)
+                    {
+                      newseg1 = Segment(x,   y,   DOWN);
+                      newseg2 = Segment(x,   y-1, LEFT);
+                      newseg3 = Segment(x-1, y-1, UP);
+                      mask(x-1,y-1) = polyidx;
+                      repl = true;
+                    }
+                  break;
 
-            default:
-              break;
-            }
+                case UP:
+                  if(x>0 && mask(x-1,y)<0)
+                    {
+                      newseg1 = Segment(x,   y,   LEFT);
+                      newseg2 = Segment(x-1, y,   UP);
+                      newseg3 = Segment(x-1, y+1, RIGHT);
+                      mask(x-1,y) = polyidx;
+                      repl = true;
+                    }
+                  else if(x<xw && mask(x,y)<0)
+                    {
+                      newseg1 = Segment(x,   y,   RIGHT);
+                      newseg2 = Segment(x+1, y,   UP);
+                      newseg3 = Segment(x+1, y+1, LEFT);
+                      mask(x,y) = polyidx;
+                      repl = true;
+                    }
+                  break;
 
-          if(repl)
-            {
-              // insert new segments backwards so order is correct
-              *sit = newseg3;
-              sit = segs.insert(sit, newseg2);
-              sit = segs.insert(sit, newseg1);
-              // continue processing from newseg1
-            }
-          else
-            {
-              // move to next
+                default:
+                  break;
+                }
+
+              if(repl)
+                {
+                  // insert new segments backwards so order is correct
+                  *sit = newseg3;
+                  sit = segs.insert(sit, newseg2);
+                  sit = segs.insert(sit, newseg1);
+
+                  // skip forward so we're not looking always in the
+                  // same direction
+                  ++sit;
+
+                  // we made a change
+                  anyrepl = true;
+                }
+
               ++sit;
             }
+
+          // nothing left
+          if(!anyrepl) break;
         }
 
       // remove useless opposing segments
