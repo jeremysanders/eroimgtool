@@ -67,15 +67,15 @@ Poly poly_clip(const Poly& spoly, const Poly& cpoly)
                 {
                   Point inter = compute_intersection(sedge1, sedge2,
                                                      cedge1, cedge2);
-                  opoly.push_back(inter);
+                  opoly.add(inter);
                 }
-              opoly.push_back(sedge2);
+              opoly.add(sedge2);
             }
           else if(is_inside(cedge1, cedge2, sedge1))
             {
               Point inter = compute_intersection(sedge1, sedge2,
                                                  cedge1, cedge2);
-              opoly.push_back(inter);
+              opoly.add(inter);
             }
 
         }
@@ -85,28 +85,30 @@ Poly poly_clip(const Poly& spoly, const Poly& cpoly)
   return opoly;
 }
 
-float poly_area(const Poly& p)
+float Poly::area() const
 {
-  float a = 0;
-  size_t j = p.size()-1;
+  if(size()<3) return 0;
 
-  for(size_t i=0; i != p.size(); ++i)
+  float a = 0;
+  size_t j = size()-1;
+
+  for(size_t i=0; i != size(); ++i)
     {
-      a += (p[j].x+p[i].x) * (p[j].y-p[i].y);
+      a += (pts[j].x+pts[i].x) * (pts[j].y-pts[i].y);
       j = i;
     }
 
   return a*0.5f;
 }
 
-Rect poly_bounds(const Poly& p)
+Rect Poly::bounds() const
 {
   float minx=std::numeric_limits<float>::infinity();
   float miny=std::numeric_limits<float>::infinity();
   float maxx=-std::numeric_limits<float>::infinity();
   float maxy=-std::numeric_limits<float>::infinity();
 
-  for(auto pt : p)
+  for(auto pt : pts)
     {
       minx = std::min(minx, pt.x);
       maxx = std::max(maxx, pt.x);
@@ -122,16 +124,16 @@ Rect poly_bounds(const Poly& p)
 int main()
 {
   Poly a;
-  a.push_back(Point(1,2));
-  a.push_back(Point(2,2));
-  a.push_back(Point(2,1));
-  a.push_back(Point(1,1));
+  a.add(Point(1,2));
+  a.add(Point(2,2));
+  a.add(Point(2,1));
+  a.add(Point(1,1));
 
   Poly b;
-  b.push_back(Point(1,3));
-  b.push_back(Point(3,3));
-  b.push_back(Point(3,1));
-  b.push_back(Point(1,1));
+  b.add(Point(1,3));
+  b.add(Point(3,3));
+  b.add(Point(3,1));
+  b.add(Point(1,1));
 
   Poly c = poly_clip(a, b);
   std::cout << poly_area(a) << '\n';

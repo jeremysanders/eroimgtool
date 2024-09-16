@@ -7,6 +7,7 @@
 
 #include "image.hh"
 #include "geom.hh"
+#include "build_poly.hh"
 
 // Routine to turn a mask image into a list of polygons
 
@@ -140,7 +141,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
         retn.back() = endpt;
       else
         // add new point
-        retn.push_back(endpt);
+        retn.add(endpt);
 
       lastdir = s.dir;
     }
@@ -148,7 +149,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
   return retn;
 }
 
-std::vector<Poly> mask_to_polygons(const Image<int>& inmask)
+PolyVec mask_to_polygons(const Image<int>& inmask)
 {
   const int xw = inmask.xw;
   const int yw = inmask.yw;

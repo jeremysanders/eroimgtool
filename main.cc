@@ -9,10 +9,6 @@
 
 int main()
 {
-  Image<double> foo(100,100,0.);
-  foo(5,5) -= 42;
-  std::printf("A: %g\n", foo(5,5));
-
   int status = 0;
 
   fitsfile* ff;
