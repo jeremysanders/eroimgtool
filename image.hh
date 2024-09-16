@@ -32,6 +32,4 @@ public:
   std::valarray<T> arr;
 };
 
-std::vector<Poly> mask_poly(const Image<int>& img);
-
 #endif

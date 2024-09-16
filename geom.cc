@@ -119,6 +119,18 @@ Rect Poly::bounds() const
   return Rect(Point(minx,miny), Point(maxx,maxy));
 }
 
+void Poly::rotate(float theta)
+{
+  const float s = std::sin(theta);
+  const float c = std::cos(theta);
+  for(Point& p : pts)
+    {
+      float tx=p.x, ty=p.y;
+      p.x = tx*c - ty*s;
+      p.y = tx*s + ty*c;
+    }
+}
+
 /*
 #include <iostream>
 int main()

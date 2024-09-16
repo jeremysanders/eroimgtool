@@ -41,16 +41,32 @@ struct Poly
   Point& front() { return pts.front(); }
   bool empty() const { return pts.empty(); }
 
+  void operator+=(Point pt) { for(auto& p : pts) p += pt; }
+  void operator-=(Point pt) { for(auto& p : pts) p -= pt; }
+  void operator*=(float v) { for(auto& p : pts) p *= v; }
+  Poly operator+(Point pt) const
+  {
+    Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p+pt); return q;
+  }
+  Poly operator-(Point pt) const
+  {
+    Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p-pt); return q;
+  }
+  Poly operator*(float v) const
+  {
+    Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p*v); return q;
+  }
+
   // bounding box of polygon
   Rect bounds() const;
 
   // area (-ve if anticlockwise)
   float area() const;
 
-  void operator+=(Point pt) { for(auto p : pts) p += pt; }
-  void operator-=(Point pt) { for(auto p : pts) p -= pt; }
-  void operator*=(float v) { for(auto p : pts) p *= v; }
+  // rotate polygon
+  void rotate(float theta);
 
+  // points stored as simple vector
   std::vector<Point> pts;
 };
 

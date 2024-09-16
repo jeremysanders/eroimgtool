@@ -108,6 +108,10 @@ const PolyVec& BadPixTable::getPolyMask(double t)
 
       // convert map to polygons
       cache_poly = mask_to_polygons(badpixmap);
+      // move to be 1-based (i.e. first pixel is centred to be at 1,1)
+      for(auto& p : cache_poly)
+        p += Point(0.5f, 0.5f);
+
     }
 
   return cache_poly;

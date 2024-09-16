@@ -4,11 +4,20 @@
 #include "gti.hh"
 #include "attitude.hh"
 #include "common.hh"
+#include "geom.hh"
+#include "coords.hh"
 
 #include "image.hh"
 
 int main()
 {
+  Poly poly;
+  poly.add(Point(1,0));
+  poly.add(Point(0,1));
+  poly.rotate(90*DEG2RAD);
+  for(auto p: poly.pts)
+    std::printf("%g %g\n", p.x, p.y);
+
   int status = 0;
 
   fitsfile* ff;

@@ -129,7 +129,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
   Poly retn;
   direction lastdir = INVALID;
 
-  for(auto s : segs)
+  for(auto& s : segs)
     {
       // check that there's no jump in the produced segments
       assert(lastdir==INVALID || (s.x==retn.back().x && s.y==retn.back().y));
