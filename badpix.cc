@@ -1,8 +1,13 @@
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <limits>
 #include "badpix.hh"
 #include "common.hh"
+#include "build_poly.hh"
 
 BadPixTable::BadPixTable(fitsfile *ff, int tm)
+  : cache_ti(-1)
 {
   int status = 0;
 
@@ -31,12 +36,12 @@ BadPixTable::BadPixTable(fitsfile *ff, int tm)
 
   check_fitsio_status(status);
 
-  num = nrows;
-  rawx.resize(num);
-  rawy.resize(num);
-  yextent.resize(num);
-  timemin.resize(num);
-  timemax.resize(num);
+  num_entries = nrows;
+  rawx.resize(num_entries);
+  rawy.resize(num_entries);
+  yextent.resize(num_entries);
+  timemin.resize(num_entries);
+  timemax.resize(num_entries);
 
   // read in table
   fits_read_col(ff, TINT, c_rawx, 1, 1, nrows, 0,
@@ -52,4 +57,58 @@ BadPixTable::BadPixTable(fitsfile *ff, int tm)
   check_fitsio_status(status);
 
   std::printf("    - successfully read %ld entries\n", nrows);
+
+  // replace times with inf or -inf as appropriate
+  const double inf = std::numeric_limits<double>::infinity();
+  for(size_t i=0; i != num_entries; ++i)
+    {
+      if(!std::isfinite(timemin[i])) timemin[i] = -inf;
+      if(!std::isfinite(timemax[i])) timemax[i] = +inf;
+    }
+
+  // get list of times where things change
+  tedge.push_back(-inf);
+  tedge.insert(tedge.end(), timemin.begin(), timemin.end());
+  tedge.insert(tedge.end(), timemax.begin(), timemax.end());
+  tedge.push_back(+inf);
+
+  std::sort(tedge.begin(), tedge.end());
+  tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
+}
+
+Image<int> BadPixTable::buildMask(double t)
+{
+  Image<int> mask(384, 384, 1);
+
+  // TODO: account for if neighbouring pixels need to be masked
+  for(size_t i=0; i != num_entries; ++i)
+    if(t>=timemin[i] && t<timemax[i])
+      {
+        for(int y=rawy[i]; y<rawy[i]+yextent[i]; ++y)
+          mask(rawx[i]-1, y-1) = 0;
+      }
+
+  return mask;
+}
+
+const PolyVec& BadPixTable::getPolyMask(double t)
+{
+  if(cache_ti < 0 || t < tedge[cache_ti] || t >= tedge[cache_ti+1])
+    {
+      // get index for this valid time
+      for(size_t i=0; i != tedge.size(); ++i)
+        if(t >= tedge[i])
+          {
+            cache_ti = i;
+            break;
+          }
+
+      // now build up map
+      Image<int> badpixmap(buildMask(t));
+
+      // convert map to polygons
+      cache_poly = mask_to_polygons(badpixmap);
+    }
+
+  return cache_poly;
 }

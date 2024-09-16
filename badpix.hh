@@ -3,15 +3,29 @@
 
 #include <vector>
 #include <fitsio.h>
+#include "image.hh"
+#include "geom.hh"
 
 class BadPixTable
 {
-  public:
+public:
   BadPixTable(fitsfile *ff, int tm);
 
-  size_t num;
+  const PolyVec& getPolyMask(double t);
+
+private:
+  Image<int> buildMask(double t);
+
+private:
+  size_t num_entries;
   std::vector<int> rawx, rawy, yextent;
   std::vector<double> timemin, timemax;
+
+  // times where bad pixel table changes
+  std::vector<double> tedge;
+
+  int cache_ti;
+  PolyVec cache_poly;
 };
 
 #endif
