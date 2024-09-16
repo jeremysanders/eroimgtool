@@ -106,11 +106,26 @@ const PolyVec& BadPixTable::getPolyMask(double t)
       // now build up map
       Image<int> badpixmap(buildMask(t));
 
-      // convert map to polygons
-      cache_poly = mask_to_polygons(badpixmap);
-      // move to be 1-based (i.e. first pixel is centred to be at 1,1)
-      for(auto& p : cache_poly)
-        p += Point(0.5f, 0.5f);
+      // we subdivide the image into tiles, as we can more easily
+      // check bounds for a small polygon and the polygon is much
+      // simpler if there are bad pixels in the middle
+      // (FIXME: assumes 384 pixels)
+      cache_poly.clear();
+      constexpr int tile_size = 32;
+      constexpr int num_tile = 12;
+      for(int yt=0;yt<num_tile;++yt)
+        for(int xt=0;xt<num_tile;++xt)
+          {
+            // chop input
+            auto rect = badpixmap.subrect(xt*tile_size, yt*tile_size,
+                                          tile_size, tile_size);
+            // make polygons
+            auto polys = mask_to_polygons(rect);
+            // add to cached list of polygons
+            const Point p0(xt*tile_size+0.5f, yt*tile_size+0.5f);
+            for(auto& poly : polys)
+              cache_poly.emplace_back(poly + p0);
+          }
 
     }
 
