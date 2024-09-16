@@ -1,6 +1,7 @@
 #ifndef GEOM_HH
 #define GEOM_HH
 
+#include <cstddef>
 #include <vector>
 
 struct Point
