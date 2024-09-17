@@ -7,7 +7,7 @@
 #include "common.hh"
 
 // filter vector according to tm
-template <class T> std::vector<T> filter_vector_tm
+template <class T> static std::vector<T> filter_vector_tm
 (const std::vector<T>& vals, const std::vector<short>& tm_nr, short tm)
 {
   std::vector<T> retn;
@@ -88,6 +88,17 @@ Events::Events(fitsfile *ff, int tm)
   pi = filter_vector_tm(pi, tm_nr, tm);
   subx = filter_vector_tm(subx, tm_nr, tm);
   suby = filter_vector_tm(suby, tm_nr, tm);
+
+  // sort entries by time (normally sorted anyway)
+  std::vector<size_t> sort_idx = argsort(time);
+  rawx = selidx(rawx, sort_idx);
+  rawy = selidx(rawy, sort_idx);
+  ra = selidx(ra, sort_idx);
+  dec = selidx(dec, sort_idx);
+  time = selidx(time, sort_idx);
+  pi = selidx(pi, sort_idx);
+  subx = selidx(subx, sort_idx);
+  suby = selidx(suby, sort_idx);
 
   num_entries = rawx.size();
 

@@ -1,6 +1,9 @@
 #ifndef COMMON_HH
 #define COMMON_HH
 
+#include <algorithm>
+#include <numeric>
+
 // throw an exception if status!=0 with fitsio error
 void check_fitsio_status(int status);
 
@@ -23,6 +26,31 @@ template<class T> constexpr T div_round_up(T a, T b)
 template <typename T> T clip(T v, T minv, T maxv)
 {
   return v < minv ? minv : (v > maxv ? maxv : v);
+}
+
+// produce a list of indices which sort
+template <class T> std::vector<size_t> argsort(const std::vector<T>& v)
+{
+  std::vector<size_t> idx(v.size());
+  std::iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in v
+  std::stable_sort(idx.begin(), idx.end(),
+       [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+  return idx;
+}
+
+// return entries in v, indexed by idx
+// i.e. v[idx[0]], v[idx[1]], ...
+template <class T> std::vector<T> selidx(const std::vector<T>& v,
+                                         const std::vector<size_t>& idx)
+{
+  std::vector<T> retn;
+  retn.reserve(idx.size());
+  for(size_t i : idx)
+    retn.push_back(v[i]);
+  return retn;
 }
 
 #endif
