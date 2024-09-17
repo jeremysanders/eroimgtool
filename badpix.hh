@@ -14,7 +14,7 @@ public:
   const PolyVec& getPolyMask(double t);
 
 private:
-  Image<int> buildMask(double t);
+  void buildMask(double t);
 
 private:
   size_t num_entries;
@@ -26,6 +26,7 @@ private:
 
   int cache_ti;
   PolyVec cache_poly;
+  Image<int> cache_mask;
 };
 
 #endif

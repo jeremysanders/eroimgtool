@@ -3,6 +3,7 @@
 #include "badpix.hh"
 #include "gti.hh"
 #include "attitude.hh"
+#include "events.hh"
 #include "common.hh"
 #include "geom.hh"
 #include "coords.hh"
@@ -20,21 +21,19 @@ int main()
   fits_open_file(&ff, filename, READONLY, &status);
   check_fitsio_status(status);
 
-  BadPixTable bp(ff, 4);
+  BadPixTable bp(ff, 2);
   GTITable gti(ff, 2);
   AttitudeTable att(ff, 2);
+  Events events(ff, 2);
 
   double t = 6.41406e+08;
   PolyVec polys = bp.getPolyMask(t);
 
-  Image<float> img(512,512,0.f);
+  Image<float> img(384,384,0.f);
 
-  std::printf("a\n");
   for(auto& poly : polys)
     {
-      Poly bppoly = poly *1.5;
-      bppoly.rotate(20*DEG2RAD);
-
+      Poly bppoly = poly;
       Rect bound = bppoly.bounds();
 
       const int ylo = std::max(0, int(std::floor(bound.tl.y)));
@@ -50,16 +49,15 @@ int main()
       for(int y=ylo; y<=yhi; ++y)
         for(int x=xlo; x<=xhi; ++x)
           {
-            pixp[0].x = x;   pixp[0].y = y;
-            pixp[1].x = x;   pixp[1].y = y+1;
-            pixp[2].x = x+1; pixp[2].y = y+1;
-            pixp[3].x = x+1; pixp[3].y = y;
+            pixp[0].x = x+0.5f; pixp[0].y = y+0.5f;
+            pixp[1].x = x+0.5f; pixp[1].y = y+1.5f;
+            pixp[2].x = x+1.5f; pixp[2].y = y+1.5f;
+            pixp[3].x = x+1.5f; pixp[3].y = y+0.5f;
 
             poly_clip(bppoly, pixp, clipped);
             img(x,y) += clipped.area();
           }
     }
-  std::printf("b\n");
 
   FILE* f = std::fopen("test.dat", "w");
   for(int y=0; y<int(img.yw); ++y)

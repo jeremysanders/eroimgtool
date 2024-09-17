@@ -7,7 +7,8 @@
 #include "build_poly.hh"
 
 BadPixTable::BadPixTable(fitsfile *ff, int tm)
-  : cache_ti(-1)
+  : cache_ti(-1),
+    cache_mask(CCD_XW, CCD_YW)
 {
   int status = 0;
 
@@ -76,27 +77,23 @@ BadPixTable::BadPixTable(fitsfile *ff, int tm)
   tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
 }
 
-Image<int> BadPixTable::buildMask(double t)
+void BadPixTable::buildMask(double t)
 {
-  Image<int> mask(CCD_XW, CCD_YW, 1);
+  cache_mask = 1;
 
   for(size_t i=0; i != num_entries; ++i)
     if(t>=timemin[i] && t<timemax[i])
       {
-        int ylo = std::max(rawy[i]-1, 0);
+        // expand bad pixel by 1
+        int ylo = std::max(rawy[i]-1, 1);
         int yhi = std::min(rawy[i]+yextent[i]+1-1, int(CCD_YW));
-        int xlo = std::max(rawx[i]-1, 0);
+        int xlo = std::max(rawx[i]-1, 1);
         int xhi = std::min(rawx[i]+1, int(CCD_XW));
 
         for(int y=ylo; y<=yhi; ++y)
           for(int x=xlo; x<=xhi; ++x)
-            mask(x-1, y-1) = 0;
-
-        // for(int y=rawy[i]; y<rawy[i]+yextent[i]; ++y)
-        //   mask(rawx[i]-1, y-1) = 0;
+            cache_mask(x-1, y-1) = 0;
       }
-
-  return mask;
 }
 
 const PolyVec& BadPixTable::getPolyMask(double t)
@@ -111,13 +108,13 @@ const PolyVec& BadPixTable::getPolyMask(double t)
             break;
           }
 
-      // now build up map
-      Image<int> badpixmap(buildMask(t));
-
       // we subdivide the image into tiles, as we can more easily
       // check bounds for a small polygon and the polygon is much
       // simpler if there are bad pixels in the middle
       cache_poly.clear();
+
+      buildMask(t);
+
       constexpr unsigned tile_size = 32;
       constexpr unsigned num_tile_x = div_round_up(CCD_XW, tile_size);
       constexpr unsigned num_tile_y = div_round_up(CCD_YW, tile_size);
@@ -125,8 +122,8 @@ const PolyVec& BadPixTable::getPolyMask(double t)
         for(unsigned xt=0;xt<num_tile_x;++xt)
           {
             // chop input
-            auto rect = badpixmap.subrect(xt*tile_size, yt*tile_size,
-                                          tile_size, tile_size);
+            auto rect = cache_mask.subrect(xt*tile_size, yt*tile_size,
+                                           tile_size, tile_size);
             // make polygons
             auto polys = mask_to_polygons(rect);
 

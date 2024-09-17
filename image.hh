@@ -17,6 +17,10 @@ public:
   Image(unsigned _xw, unsigned _yw, T val)
     : xw(_xw), yw(_yw), arr(val, xw*yw) {}
 
+  void operator=(T v)
+  {
+    arr = v;
+  }
   T operator()(unsigned x, unsigned y) const
   {
     assert(x<xw && y<yw);
