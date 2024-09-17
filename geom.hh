@@ -73,12 +73,8 @@ struct Poly
 
 typedef std::vector<Poly> PolyVec;
 
-template <typename T> T clip(T v, T minv, T maxv)
-{
-  return v < minv ? minv : (v > maxv ? maxv : v);
-}
-
 // clip polygons (polys must be defined the right way round)
-Poly poly_clip(const Poly& spoly, const Poly& cpoly);
+// opoly is overwritten (not returned, so we don't have to reallocate)
+void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);
 
 #endif

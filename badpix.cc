@@ -78,14 +78,22 @@ BadPixTable::BadPixTable(fitsfile *ff, int tm)
 
 Image<int> BadPixTable::buildMask(double t)
 {
-  Image<int> mask(384, 384, 1);
+  Image<int> mask(CCD_XW, CCD_YW, 1);
 
-  // TODO: account for if neighbouring pixels need to be masked
   for(size_t i=0; i != num_entries; ++i)
     if(t>=timemin[i] && t<timemax[i])
       {
-        for(int y=rawy[i]; y<rawy[i]+yextent[i]; ++y)
-          mask(rawx[i]-1, y-1) = 0;
+        int ylo = std::max(rawy[i]-1, 0);
+        int yhi = std::min(rawy[i]+yextent[i]+1-1, int(CCD_YW));
+        int xlo = std::max(rawx[i]-1, 0);
+        int xhi = std::min(rawx[i]+1, int(CCD_XW));
+
+        for(int y=ylo; y<=yhi; ++y)
+          for(int x=xlo; x<=xhi; ++x)
+            mask(x-1, y-1) = 0;
+
+        // for(int y=rawy[i]; y<rawy[i]+yextent[i]; ++y)
+        //   mask(rawx[i]-1, y-1) = 0;
       }
 
   return mask;
@@ -109,12 +117,12 @@ const PolyVec& BadPixTable::getPolyMask(double t)
       // we subdivide the image into tiles, as we can more easily
       // check bounds for a small polygon and the polygon is much
       // simpler if there are bad pixels in the middle
-      // (FIXME: assumes 384 pixels)
       cache_poly.clear();
-      constexpr int tile_size = 32;
-      constexpr int num_tile = 384/tile_size + (384%tile_size != 0);
-      for(int yt=0;yt<num_tile;++yt)
-        for(int xt=0;xt<num_tile;++xt)
+      constexpr unsigned tile_size = 32;
+      constexpr unsigned num_tile_x = div_round_up(CCD_XW, tile_size);
+      constexpr unsigned num_tile_y = div_round_up(CCD_YW, tile_size);
+      for(unsigned yt=0;yt<num_tile_y;++yt)
+        for(unsigned xt=0;xt<num_tile_x;++xt)
           {
             // chop input
             auto rect = badpixmap.subrect(xt*tile_size, yt*tile_size,

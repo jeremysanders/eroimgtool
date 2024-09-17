@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -O2 -std=c++17 -Wall -g
+CXXFLAGS = -O2 -std=c++17 -Wall -Wextra -g
 LDFLAGS = -lcfitsio
 
 # Output program

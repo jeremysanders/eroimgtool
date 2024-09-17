@@ -44,10 +44,11 @@ static Point compute_intersection(Point p1, Point p2, Point p3, Point p4)
 // see https://github.com/mhdadk/sutherland-hodgman/blob/main/SH.py
 // points need to be in correct order (anticlockwise?) or overlap is zero
 
-Poly poly_clip(const Poly& spoly, const Poly& cpoly)
+void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly)
 {
-  Poly opoly(spoly);
+  opoly = spoly;
   Poly npoly;
+  npoly.pts.reserve(std::max(spoly.size(), cpoly.size())*2);
 
   for(size_t i=0; i != cpoly.size(); ++i)
     {
@@ -78,11 +79,9 @@ Poly poly_clip(const Poly& spoly, const Poly& cpoly)
               opoly.add(inter);
             }
 
-        }
+        } // npoly
 
-    }
-
-  return opoly;
+    } // cpoly
 }
 
 float Poly::area() const

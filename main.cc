@@ -20,7 +20,7 @@ int main()
   fits_open_file(&ff, filename, READONLY, &status);
   check_fitsio_status(status);
 
-  BadPixTable bp(ff, 2);
+  BadPixTable bp(ff, 4);
   GTITable gti(ff, 2);
   AttitudeTable att(ff, 2);
 
@@ -30,27 +30,32 @@ int main()
   Image<float> img(512,512,0.f);
 
   std::printf("a\n");
-  for(auto& bppoly : polys)
+  for(auto& poly : polys)
     {
+      Poly bppoly = poly *1.5;
+      bppoly.rotate(20*DEG2RAD);
+
       Rect bound = bppoly.bounds();
 
-      for(int y=0; y<int(img.yw); ++y)
-        for(int x=0; x<int(img.xw); ++x)
+      const int ylo = std::max(0, int(std::floor(bound.tl.y)));
+      const int xlo = std::max(0, int(std::floor(bound.tl.x)));
+      const int yhi = std::min(int(img.yw)-1, int(std::ceil(bound.br.y)));
+      const int xhi = std::min(int(img.xw)-1, int(std::ceil(bound.br.x)));
+
+      // predefine polygon for pixel
+      Poly pixp, clipped;
+      for(int i=0; i<4; ++i)
+        pixp.add(Point());
+
+      for(int y=ylo; y<=yhi; ++y)
+        for(int x=xlo; x<=xhi; ++x)
           {
-            float xf = x/512.*400.;
-            float yf = y/512.*400.;
+            pixp[0].x = x;   pixp[0].y = y;
+            pixp[1].x = x;   pixp[1].y = y+1;
+            pixp[2].x = x+1; pixp[2].y = y+1;
+            pixp[3].x = x+1; pixp[3].y = y;
 
-            if( (xf+1<bound.tl.x) || (yf+1<bound.tl.y) || (xf>bound.br.x) ||
-                (yf>bound.br.y) )
-              continue;
-
-            Poly pixp;
-            pixp.add(Point(xf,yf));
-            pixp.add(Point(xf,yf+1));
-            pixp.add(Point(xf+1,yf+1));
-            pixp.add(Point(xf+1,yf));
-
-            Poly clipped = poly_clip(bppoly, pixp);
+            poly_clip(bppoly, pixp, clipped);
             img(x,y) += clipped.area();
           }
     }
