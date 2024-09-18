@@ -20,7 +20,7 @@ static Point compute_intersection(Point p1, Point p2, Point p3, Point p4)
       float b2 = p3.y - m2*p3.x;
       y = m2*x + b2;
     }
-  else if( std::abs(p4.x-p3.x) < 1e-8 )
+  else if( std::abs(p4.x-p3.x) < 1e-5f )
     {
       x = p3.x;
       float m1 = (p2.y-p1.y) / (p2.x-p1.x);
