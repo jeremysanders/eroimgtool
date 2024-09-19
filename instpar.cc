@@ -74,9 +74,52 @@ std::string lookup_cal(const std::string& subdir, const std::string& cmpt)
 
 InstPar::InstPar(int tm)
 {
-  char tmname[8];
-  std::sprintf(tmname, "tm%d", tm);
-  std::string instparfn = lookup_cal(tmname, "GEOM");
+  std::string instparfn = lookup_cal("tm"+std::to_string(tm), "GEOM");
+  std::printf("Reading INSTPAR file %s\n", instparfn.c_str());
 
-  std::printf("cal:%s\n", instparfn.c_str());
+  int status = 0;
+  fitsfile* ff;
+
+  fits_open_file(&ff, instparfn.c_str(), READONLY, &status);
+  check_fitsio_status(status);
+
+  fits_movnam_hdu(ff, BINARY_TBL, const_cast<char*>("INSTPAR"), 0, &status);
+  check_fitsio_status(status);
+
+  int c_x_optax, c_y_optax, c_x_platescale, c_y_platescale,
+    c_x_ccdpix, c_y_ccdpix, c_x_ref, c_y_ref, c_timelag;
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("X_OPTAX"),
+                  &c_x_optax, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("Y_OPTAX"),
+                  &c_y_optax, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("X_PLATESCALE"),
+                  &c_x_platescale, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("Y_PLATESCALE"),
+                  &c_y_platescale, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("X_CCDPIX"),
+                  &c_x_ccdpix, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("Y_CCDPIX"),
+                  &c_y_ccdpix, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("X_REF"),
+                  &c_x_ref, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("Y_REF"),
+                  &c_y_ref, &status);
+  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("TIMELAG"),
+                  &c_timelag, &status);
+  check_fitsio_status(status);
+
+  fits_read_col(ff, TDOUBLE, c_x_optax, 1, 1, 1, 0, &x_optax, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_y_optax, 1, 1, 1, 0, &y_optax, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_x_platescale, 1, 1, 1, 0, &x_platescale, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_y_platescale, 1, 1, 1, 0, &y_platescale, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_x_ccdpix, 1, 1, 1, 0, &x_ccdpix, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_y_ccdpix, 1, 1, 1, 0, &y_ccdpix, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_x_ref, 1, 1, 1, 0, &x_ref, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_y_ref, 1, 1, 1, 0, &y_ref, 0, &status);
+  fits_read_col(ff, TDOUBLE, c_timelag, 1, 1, 1, 0, &timelag, 0, &status);
+  check_fitsio_status(status);
+
+  fits_close_file(ff, &status);
+  check_fitsio_status(status);
+  std::printf("  Done\n");
 }

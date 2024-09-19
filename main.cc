@@ -13,6 +13,8 @@
 
 int main()
 {
+  InstPar instpar(2);
+
   int status = 0;
 
   fitsfile* ff;
@@ -26,7 +28,6 @@ int main()
   GTITable gti(ff, 2);
   AttitudeTable att(ff, 2);
   Events events(ff, 2);
-  InstPar instpar(2);
   return 0;
 
   double src_ra = 57.3469733;

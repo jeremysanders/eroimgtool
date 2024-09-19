@@ -10,7 +10,7 @@ class InstPar
 public:
   InstPar(int tm);
 
-  double x_optax, yoptax;
+  double x_optax, y_optax;
   double x_platescale, y_platescale;
   double x_ccdpix, y_ccdpix;
   double x_ref, y_ref;
