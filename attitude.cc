@@ -58,7 +58,8 @@ std::tuple<double, double, double> AttitudeTable::interpolate(double t)
 {
   while( time[cache_idx+1]>t and cache_idx>0 )
     --cache_idx;
-  while( t>time[cache_idx] and cache_idx<int(time.size())-1 )
+
+  while( t>time[cache_idx+1] and cache_idx<int(time.size())-1 )
     ++cache_idx;
 
   if( t<time[cache_idx] || t>time[cache_idx+1] )

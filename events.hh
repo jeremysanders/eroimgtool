@@ -9,7 +9,7 @@ class Events
 public:
   Events(fitsfile *ff, int tm);
 
-private:
+public:
   size_t num_entries;
   std::vector<short> rawx, rawy;
   std::vector<double> ra, dec, time;

@@ -9,6 +9,7 @@
 #include "coords.hh"
 
 #include "image.hh"
+#include "instpar.hh"
 
 int main()
 {
@@ -16,7 +17,7 @@ int main()
 
   fitsfile* ff;
 
-  const char *filename = "em01_108141_020_ML00003_003_c946/evt.fits.gz";
+  const char *filename = "em01_056102_020_ML00001_004_c946/evt.fits.gz";
   std::printf("Opening file %s\n", filename);
   fits_open_file(&ff, filename, READONLY, &status);
   check_fitsio_status(status);
@@ -25,10 +26,24 @@ int main()
   GTITable gti(ff, 2);
   AttitudeTable att(ff, 2);
   Events events(ff, 2);
+  InstPar instpar(2);
+  return 0;
 
-  double t = 6.41406e+08;
-  PolyVec polys = bp.getPolyMask(t);
+  double src_ra = 57.3469733;
+  double src_dec = -11.9910211;
 
+  for(size_t i=0; i!=events.num_entries; ++i)
+    {
+      const auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
+
+
+
+
+    }
+
+
+
+  /*
   Image<float> img(384,384,0.f);
 
   for(auto& poly : polys)
@@ -69,6 +84,7 @@ int main()
       std::fprintf(f, "\n");
     }
   std::fclose(f);
+  */
 
   fits_close_file(ff, &status);
   check_fitsio_status(status);
