@@ -1,5 +1,8 @@
-#include <fitsio.h>
+#include <cmath>
 #include <cstdio>
+
+#include <fitsio.h>
+
 #include "badpix.hh"
 #include "gti.hh"
 #include "attitude.hh"
@@ -7,7 +10,6 @@
 #include "common.hh"
 #include "geom.hh"
 #include "coords.hh"
-
 #include "image.hh"
 #include "instpar.hh"
 
@@ -28,20 +30,39 @@ int main()
   GTITable gti(ff, 2);
   AttitudeTable att(ff, 2);
   Events events(ff, 2);
-  return 0;
 
-  double src_ra = 57.3469733;
-  double src_dec = -11.9910211;
+  std::printf("Making image\n");
+  double src_ra = 57.3466206;
+  double src_dec = -11.9909090;
+
+  CoordConv coordconv(instpar.x_platescale, instpar.y_platescale,
+                      instpar.x_ref, instpar.y_ref);
+
+  Image<int> outimg(512, 512);
+  float xc = 255;
+  float yc = 255;
+  float pixscale = 1.0;
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
-      const auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
+      auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
+      coordconv.updatePointing(att_ra, att_dec, att_roll);
 
+      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
 
+      src_ccdx = 192.5;
+      src_ccdy = 192.5;
 
+      float del_ccdx = events.ccdx[i] - float(src_ccdx);
+      float del_ccdy = events.ccdy[i] - float(src_ccdy);
 
+      int px = int(std::round(del_ccdx/pixscale + xc));
+      int py = int(std::round(del_ccdy/pixscale + yc));
+      if(px>=0 && px<int(outimg.xw) && py>=0 && py<int(outimg.yw))
+        outimg(px, py) += 1;
     }
 
+  write_fits_image("test.fits", outimg, xc, yc, pixscale);
 
 
   /*

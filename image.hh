@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <string>
 #include <valarray>
 #include <vector>
 
@@ -47,8 +48,25 @@ public:
     return sub;
   }
 
+  // return image where y and x are swapped
+  Image<T> transpose() const
+  {
+    Image<T> out(yw, xw);
+    for(unsigned y=0; y<yw; ++y)
+      for(unsigned x=0; x<xw; ++x)
+        out(y, x) = (*this)(x, y);
+    return out;
+  }
+
+  T min() const { return arr.min(); }
+  T max() const { return arr.max(); }
+
   unsigned xw, yw;
   std::valarray<T> arr;
 };
+
+void write_fits_image(const std::string& filename,
+                      const Image<int>& img,
+                      float xc, float yc, float pixscale);
 
 #endif

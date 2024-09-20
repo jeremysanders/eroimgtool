@@ -107,6 +107,11 @@ InstPar::InstPar(int tm)
   x_ref = read_single_col_val("X_REF");
   y_ref = read_single_col_val("Y_REF");
 
+  pixscale_x = x_platescale/3600.;
+  pixscale_y = y_platescale/3600.;
+  inv_pixscale_x = 3600./x_platescale;
+  inv_pixscale_y = 3600./y_platescale;
+
   fits_close_file(ff, &status);
   check_fitsio_status(status);
   std::printf("  Done\n");
