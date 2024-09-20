@@ -41,7 +41,7 @@ int main()
   Image<int> outimg(512, 512);
   float xc = 255;
   float yc = 255;
-  float pixscale = 1.0;
+  float pixscale = 1/8.f;
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
@@ -50,8 +50,8 @@ int main()
 
       auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
 
-      src_ccdx = 192.5;
-      src_ccdy = 192.5;
+      //src_ccdx = 192.5;
+      //src_ccdy = 192.5;
 
       float del_ccdx = events.ccdx[i] - float(src_ccdx);
       float del_ccdy = events.ccdy[i] - float(src_ccdy);

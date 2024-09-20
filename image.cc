@@ -1,4 +1,5 @@
 #include <limits>
+#include <unistd.h>
 
 #include <fitsio.h>
 
@@ -50,8 +51,12 @@ static int get_int_bitpix(const Image<int>& img)
 
 void write_fits_image(const std::string& filename,
                       const Image<int>& img,
-                      float xc, float yc, float pixscale)
+                      float xc, float yc, float pixscale,
+                      bool overwrite)
 {
+  if(overwrite)
+    unlink(filename.c_str());
+
   int status = 0;
 
   fitsfile* ff;

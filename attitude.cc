@@ -75,7 +75,7 @@ std::tuple<double, double, double> AttitudeTable::interpolate(double t)
   double c1 = std::cos(roll[cache_idx]*DEG2RAD);
   double s2 = std::sin(roll[cache_idx+1]*DEG2RAD);
   double c2 = std::cos(roll[cache_idx+1]*DEG2RAD);
-  double roll_int = std::atan2(s1*(1-f)+s2*f, c1*(1-f)+c2*f);
+  double roll_int = std::atan2(s1*(1-f)+s2*f, c1*(1-f)+c2*f)*RAD2DEG;
 
   // combine to return
   return std::make_tuple(ra_int, dec_int, roll_int);

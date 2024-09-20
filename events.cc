@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -7,14 +8,22 @@
 #include "common.hh"
 
 // filter vector according to tm
-template <class T> static std::vector<T> filter_vector_tm
-(const std::vector<T>& vals, const std::vector<short>& tm_nr, short tm)
+template <class T> static void filter_vector_tm
+(std::vector<T>& vals, const std::vector<short>& tm_nr, short tm)
 {
-  std::vector<T> retn;
-  for(size_t i=0; i!=tm_nr.size(); ++i)
-    if( tm_nr[i] == tm )
-      retn.push_back(vals[i]);
-  return retn;
+  assert(vals.size() == tm_nr.size());
+
+  size_t j = 0;
+  for(size_t i=0; i != tm_nr.size(); ++i)
+    {
+      if(tm_nr[i] == tm)
+        {
+          vals[j] = vals[i];
+          ++j;
+        }
+    }
+
+  vals.resize(j);
 }
 
 Events::Events(fitsfile *ff, int tm)
@@ -80,14 +89,14 @@ Events::Events(fitsfile *ff, int tm)
   std::printf("    - successfully read %ld entries\n", nrows);
 
   // filter rows to just get events for TM
-  rawx = filter_vector_tm(rawx, tm_nr, tm);
-  rawy = filter_vector_tm(rawy, tm_nr, tm);
-  ra = filter_vector_tm(ra, tm_nr, tm);
-  dec = filter_vector_tm(dec, tm_nr, tm);
-  time = filter_vector_tm(time, tm_nr, tm);  
-  pi = filter_vector_tm(pi, tm_nr, tm);
-  subx = filter_vector_tm(subx, tm_nr, tm);
-  suby = filter_vector_tm(suby, tm_nr, tm);
+  filter_vector_tm(rawx, tm_nr, tm);
+  filter_vector_tm(rawy, tm_nr, tm);
+  filter_vector_tm(ra, tm_nr, tm);
+  filter_vector_tm(dec, tm_nr, tm);
+  filter_vector_tm(time, tm_nr, tm);
+  filter_vector_tm(pi, tm_nr, tm);
+  filter_vector_tm(subx, tm_nr, tm);
+  filter_vector_tm(suby, tm_nr, tm);
 
   // sort entries by time (normally sorted anyway)
   std::vector<size_t> sort_idx = argsort(time);
