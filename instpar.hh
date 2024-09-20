@@ -14,7 +14,6 @@ public:
   double x_platescale, y_platescale;
   double x_ccdpix, y_ccdpix;
   double x_ref, y_ref;
-  double timelag;
 
   double pixscale_x, pixscale_y;
   double inv_pixscale_x, inv_pixscale_y;
