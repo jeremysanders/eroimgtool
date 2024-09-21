@@ -130,6 +130,48 @@ void Poly::rotate(float theta)
     }
 }
 
+bool Poly::is_inside(Point pt) const
+{
+  size_t num = size();
+  if(num < 3)
+    return false;
+
+  // first check bounds
+  Rect b = bounds();
+  if(pt.x < b.tl.x || pt.y < b.tl.y || pt.x > b.br.x || pt.y > b.br.y)
+    return false;
+
+  // use ray casting algorithm.
+  // odd times horizontal ray crosses poly edge says whether inside
+  unsigned count = 0;
+  for(size_t i=0; i != num; ++i)
+    {
+      Point p1 = pts[i];
+      Point p2 = pts[(i+1) % num];
+
+      if( pt.y >= std::min(p1.y, p2.y) && pt.y <= std::max(p1.y, p2.y) )
+        {
+          if( pt.x < std::min(p1.x, p2.x) )
+            // must cross
+            ++count;
+          else if( pt.x > std::max(p1.x, p2.x) )
+            // can't cross
+            ;
+          else if( std::abs(p1.y - p2.y) > 1e-6f )
+            {
+              // calculate line x at y=pt.y
+              float grad = (p2.x - p1.x) / (p2.y - p1.y);
+              float lx = p1.x + grad * (pt.y-p1.y);
+              // does +x extending line from pt cross this?
+              if( lx > pt.x )
+                ++count;
+            }
+        }
+    }
+
+  return count % 2 != 0;
+}
+
 /*
 #include <iostream>
 int main()

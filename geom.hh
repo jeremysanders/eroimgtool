@@ -41,6 +41,7 @@ struct Poly
   Point& back() { return pts.back(); }
   Point& front() { return pts.front(); }
   bool empty() const { return pts.empty(); }
+  bool is_inside(Point pt) const;
 
   void operator+=(Point pt) { for(auto& p : pts) p += pt; }
   void operator-=(Point pt) { for(auto& p : pts) p -= pt; }
