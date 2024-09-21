@@ -12,9 +12,11 @@ struct Point
   void operator+=(Point o) { x += o.x; y += o.y; }
   void operator-=(Point o) { x -= o.x; y -= o.y; }
   void operator*=(float v) { x *= v; y *= v; }
+  void operator/=(float v) { x /= v; y /= v; }
   Point operator+(Point o) const { return Point(x+o.x,y+o.y); }
   Point operator-(Point o) const { return Point(x-o.x,y-o.y); }
   Point operator*(float v) const { return Point(x*v, y*v); }
+  Point operator/(float v) const { return Point(x/v, y/v); }
 
   float x, y;
 };
@@ -46,6 +48,7 @@ struct Poly
   void operator+=(Point pt) { for(auto& p : pts) p += pt; }
   void operator-=(Point pt) { for(auto& p : pts) p -= pt; }
   void operator*=(float v) { for(auto& p : pts) p *= v; }
+  void operator/=(float v) { for(auto& p : pts) p /= v; }
   Poly operator+(Point pt) const
   {
     Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p+pt); return q;
@@ -57,6 +60,10 @@ struct Poly
   Poly operator*(float v) const
   {
     Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p*v); return q;
+  }
+  Poly operator/(float v) const
+  {
+    Poly q; q.pts.reserve(size()); for(auto p : pts) q.add(p/v); return q;
   }
 
   // bounding box of polygon

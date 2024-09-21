@@ -22,7 +22,7 @@ class Mask
 public:
   Mask(const std::string& filename);
 
-  PolyVec as_ccd_poly(const CoordConv& cc);
+  PolyVec as_ccd_poly(const CoordConv& cc) const;
 
 private:
   CoordVecVec maskcoords;

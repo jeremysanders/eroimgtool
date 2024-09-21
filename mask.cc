@@ -162,7 +162,7 @@ Mask::Mask(const std::string& filename)
   std::printf("  - converted to %ld sky coordinates\n", ct);
 }
 
-PolyVec Mask::as_ccd_poly(const CoordConv& cc)
+PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
 {
   PolyVec polys;
 

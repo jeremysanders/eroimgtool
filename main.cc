@@ -45,7 +45,7 @@ int main()
   Image<int> outimg(512, 512);
   float xc = 255;
   float yc = 255;
-  float pixscale = 1/8.f;
+  float pixscale = 1; //1/8.f;
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
@@ -56,14 +56,26 @@ int main()
       auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
       coordconv.updatePointing(att_ra, att_dec, att_roll);
 
+      // ignore masked regions
+      PolyVec ccd_polys(mask.as_ccd_poly(coordconv));
+      bool ok = true;
+      Point pt(events.ccdx[i], events.ccdy[i]);
+      for(auto& poly : ccd_polys)
+        {
+          ok = ok && !poly.is_inside(pt);
+          if(!ok) break;
+        }
+
+      if(!ok)
+        continue;
+
       auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
       // src_ccdx = 192.5; src_ccdy = 192.5;
 
-      float del_ccdx = events.ccdx[i] - float(src_ccdx);
-      float del_ccdy = events.ccdy[i] - float(src_ccdy);
-
-      int px = int(std::round(del_ccdx/pixscale + xc));
-      int py = int(std::round(del_ccdy/pixscale + yc));
+      Point relpt = pt - Point(src_ccdx, src_ccdy);
+      Point scalept = relpt/pixscale + Point(xc, yc);
+      int px = int(std::round(scalept.x));
+      int py = int(std::round(scalept.y));
       if(px>=0 && px<int(outimg.xw) && py>=0 && py<int(outimg.yw))
         outimg(px, py) += 1;
     }
