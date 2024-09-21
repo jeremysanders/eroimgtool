@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "coords.hh"
+#include "geom.hh"
+
 struct Coord
 {
   Coord() {}
@@ -16,9 +19,12 @@ typedef std::vector<CoordVec> CoordVecVec;
 
 class Mask
 {
-  public:
+public:
   Mask(const std::string& filename);
 
+  PolyVec as_ccd_poly(const CoordConv& cc);
+
+private:
   CoordVecVec maskcoords;
 };
 
