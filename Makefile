@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -O2 -std=c++17 -Wall -Wextra -g
+CXXFLAGS = -O2 -std=c++17 -Wall -g
 LDFLAGS = -lcfitsio -lwcs
 
 # Output program
@@ -10,7 +10,7 @@ BUILD_DIR = ./build
 
 # List of all C++ sources
 SRC = attitude.cc badpix.cc common.cc geom.cc gti.cc main.cc coords.cc \
-	image.cc build_poly.cc events.cc instpar.cc mask.cc
+	image.cc build_poly.cc events.cc instpar.cc mask.cc mode.cc
 
 # All .o files go to build dir.
 OBJ = $(SRC:%.cc=$(BUILD_DIR)/%.o)

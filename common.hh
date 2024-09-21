@@ -25,6 +25,11 @@ constexpr double RAD2DEG = 180. / PI;
 constexpr unsigned CCD_XW = 384;
 constexpr unsigned CCD_YW = 384;
 
+template<class T> T sqr(T a)
+{
+  return a*a;
+}
+
 // divide, rounding up
 template<class T> constexpr T div_round_up(T a, T b)
 {

@@ -13,6 +13,7 @@
 #include "image.hh"
 #include "instpar.hh"
 #include "mask.hh"
+#include "mode.hh"
 
 int main()
 {
@@ -47,32 +48,51 @@ int main()
   float yc = 255;
   float pixscale = 1; //1/8.f;
 
+  ModeAverageFoVSky mode;
+
   for(size_t i=0; i!=events.num_entries; ++i)
     {
       // skip events on bad pixels
       if( bp.getMask(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0 )
         continue;
 
+      Point evtpt(events.ccdx[i], events.ccdy[i]);
+
+      // get attitude at time of event
       auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
       coordconv.updatePointing(att_ra, att_dec, att_roll);
 
       // ignore masked regions
       PolyVec ccd_polys(mask.as_ccd_poly(coordconv));
-      bool ok = true;
-      Point pt(events.ccdx[i], events.ccdy[i]);
+      bool masked = false;
       for(auto& poly : ccd_polys)
-        {
-          ok = ok && !poly.is_inside(pt);
-          if(!ok) break;
-        }
-
-      if(!ok)
+        if( poly.is_inside(evtpt) )
+          {
+            masked = true; break;
+          }
+      if(masked)
         continue;
 
+      // get ccd coordinates of source
       auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
-      // src_ccdx = 192.5; src_ccdy = 192.5;
 
-      Point relpt = pt - Point(src_ccdx, src_ccdy);
+      // skip if source is outsite allowed region
+      Point srcccd(src_ccdx, src_ccdy);
+      if( ! mode.source_valid(srcccd) )
+        continue;
+
+      // compute relative coordinates of photon
+      Point origin = mode.origin(srcccd);
+      Point relpt = evtpt - origin;
+
+      // apply any necessary rotation for mode
+      auto mat = mode.rotation_matrix(att_roll, srcccd-Point(instpar.x_ref,
+                                                             instpar.y_ref));
+
+      relpt = Point(relpt.x*mat[0]+relpt.y*mat[1],
+                    relpt.x*mat[2]+relpt.y*mat[3]);
+
+      // calculate coordinates in image and add to pixel
       Point scalept = relpt/pixscale + Point(xc, yc);
       int px = int(std::round(scalept.x));
       int py = int(std::round(scalept.y));

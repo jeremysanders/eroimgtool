@@ -84,6 +84,14 @@ void BadPixTable::buildMaskImage(double t)
           for(int x=xlo; x<=xhi; ++x)
             cache_mask(x-1, y-1) = 0;
       }
+
+  for(int i=0; i<384; i++)
+    {
+      cache_mask(0, i) = 0;
+      cache_mask(383, i) = 0;
+      cache_mask(i, 0) = 0;
+      cache_mask(i, 383) = 0;
+    }
 }
 
 void BadPixTable::buildMaskPoly()
