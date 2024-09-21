@@ -4,8 +4,17 @@
 #include <algorithm>
 #include <numeric>
 
+#include <fitsio.h>
+
 // throw an exception if status!=0 with fitsio error
 void check_fitsio_status(int status);
+
+// quick helper to read a whole fits column
+void read_fits_column(fitsfile *ff, const char* name,
+                      int type, long nrows, void *retn);
+
+// move to hdu with name given
+void move_fits_hdu(fitsfile* ff, const char* name);
 
 // maths
 constexpr double PI = 3.14159265358979323846264338327950288;

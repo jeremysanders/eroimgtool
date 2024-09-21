@@ -10,27 +10,12 @@ AttitudeTable::AttitudeTable(fitsfile *ff, int tm)
 {
   int status = 0;
 
-  char hduname[16];
-  std::sprintf(hduname, "CORRATT%d", tm);
-
-  std::printf("  Opening attitude extension %s\n", hduname);
-  fits_movnam_hdu(ff, BINARY_TBL, hduname, 0, &status);
-  check_fitsio_status(status);
-
-  // get indices of columns
-  int c_time, c_ra, c_dec, c_roll;
-  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("TIME"),
-                  &c_time, &status);
-  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("RA"),
-                  &c_ra, &status);
-  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("DEC"),
-                  &c_dec, &status);
-  fits_get_colnum(ff, CASEINSEN, const_cast<char*>("ROLL"),
-                  &c_roll, &status);
+  std::string hduname = std::string("CORRATT") + std::to_string(tm);
+  std::printf("  - Opening attitude extension %s\n", hduname.c_str());
+  move_fits_hdu(ff, hduname.c_str());
 
   long nrows;
   fits_get_num_rows(ff, &nrows, &status);
-
   check_fitsio_status(status);
 
   num = nrows;
@@ -39,16 +24,10 @@ AttitudeTable::AttitudeTable(fitsfile *ff, int tm)
   dec.resize(num);
   roll.resize(num);
 
-  // read in table
-  fits_read_col(ff, TDOUBLE, c_time, 1, 1, nrows, 0,
-                &time[0], 0, &status);
-  fits_read_col(ff, TDOUBLE, c_ra, 1, 1, nrows, 0,
-                &ra[0], 0, &status);
-  fits_read_col(ff, TDOUBLE, c_dec, 1, 1, nrows, 0,
-                &dec[0], 0, &status);
-  fits_read_col(ff, TDOUBLE, c_roll, 1, 1, nrows, 0,
-                &roll[0], 0, &status);
-  check_fitsio_status(status);
+  read_fits_column(ff, "TIME", TDOUBLE, nrows, &time[0]);
+  read_fits_column(ff, "RA", TDOUBLE, nrows, &ra[0]);
+  read_fits_column(ff, "DEC", TDOUBLE, nrows, &dec[0]);
+  read_fits_column(ff, "ROLL", TDOUBLE, nrows, &roll[0]);
 
   std::printf("    - successfully read %ld entries\n", nrows);
   std::printf("    - time from %.0f to %.0f\n", time[0], time[nrows-1]);

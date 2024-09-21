@@ -23,7 +23,7 @@ std::string lookup_cal(const std::string& subdir, const std::string& cmpt)
   fits_open_file(&ff, idx_fname.c_str(), READONLY, &status);
   check_fitsio_status(status);
 
-  fits_movnam_hdu(ff, BINARY_TBL, const_cast<char*>("CIF"), 0, &status);
+  fits_movnam_hdu(ff, ANY_HDU, const_cast<char*>("CIF"), 0, &status);
   check_fitsio_status(status);
 
   // get columns and number of rows
