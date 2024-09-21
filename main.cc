@@ -16,7 +16,7 @@
 
 int main()
 {
-  const int tm = 1;
+  const int tm = 2;
 
   InstPar instpar(tm);
 
@@ -49,13 +49,15 @@ int main()
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
+      // skip events on bad pixels
+      if( bp.getMask(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0 )
+        continue;
+
       auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
       coordconv.updatePointing(att_ra, att_dec, att_roll);
 
       auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
-
-      //src_ccdx = 192.5;
-      //src_ccdy = 192.5;
+      // src_ccdx = 192.5; src_ccdy = 192.5;
 
       float del_ccdx = events.ccdx[i] - float(src_ccdx);
       float del_ccdy = events.ccdy[i] - float(src_ccdy);

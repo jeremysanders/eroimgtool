@@ -77,7 +77,21 @@ BadPixTable::BadPixTable(fitsfile *ff, int tm)
   tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
 }
 
-void BadPixTable::buildMask(double t)
+void BadPixTable::checkCache(double t)
+{
+  if(cache_ti < 0 || t < tedge[cache_ti] || t >= tedge[cache_ti+1])
+    {
+      size_t i=0;
+      while( i+1 < tedge.size() && tedge[i+1]<t )
+        ++i;
+      cache_ti = i;
+
+      buildMaskImage(t);
+      buildMaskPoly();
+    }
+}
+
+void BadPixTable::buildMaskImage(double t)
 {
   cache_mask = 1;
 
@@ -96,59 +110,26 @@ void BadPixTable::buildMask(double t)
       }
 }
 
-const PolyVec& BadPixTable::getPolyMask(double t)
+void BadPixTable::buildMaskPoly()
 {
-  if(cache_ti < 0 || t < tedge[cache_ti] || t >= tedge[cache_ti+1])
-    {
-      // get index for this valid time
-      for(size_t i=0; i != tedge.size(); ++i)
-        if(t >= tedge[i])
-          {
-            cache_ti = i;
-            break;
-          }
+  cache_poly.clear();
 
-      // we subdivide the image into tiles, as we can more easily
-      // check bounds for a small polygon and the polygon is much
-      // simpler if there are bad pixels in the middle
-      cache_poly.clear();
+  constexpr unsigned tile_size = 32;
+  constexpr unsigned num_tile_x = div_round_up(CCD_XW, tile_size);
+  constexpr unsigned num_tile_y = div_round_up(CCD_YW, tile_size);
+  for(unsigned yt=0;yt<num_tile_y;++yt)
+    for(unsigned xt=0;xt<num_tile_x;++xt)
+      {
+        // chop input
+        auto rect = cache_mask.subrect(xt*tile_size, yt*tile_size,
+                                       tile_size, tile_size);
+        // make polygons
+        auto polys = mask_to_polygons(rect);
 
-      buildMask(t);
+        // add to cached list of polygons
+        const Point p0(xt*tile_size+0.5f, yt*tile_size+0.5f);
+        for(auto& poly : polys)
+          cache_poly.emplace_back(poly + p0);
+      }
 
-      constexpr unsigned tile_size = 32;
-      constexpr unsigned num_tile_x = div_round_up(CCD_XW, tile_size);
-      constexpr unsigned num_tile_y = div_round_up(CCD_YW, tile_size);
-      for(unsigned yt=0;yt<num_tile_y;++yt)
-        for(unsigned xt=0;xt<num_tile_x;++xt)
-          {
-            // chop input
-            auto rect = cache_mask.subrect(xt*tile_size, yt*tile_size,
-                                           tile_size, tile_size);
-            // make polygons
-            auto polys = mask_to_polygons(rect);
-
-            // add to cached list of polygons
-            const Point p0(xt*tile_size+0.5f, yt*tile_size+0.5f);
-            for(auto& poly : polys)
-              {
-                // if(xt==3 && yt==799)
-                //   {
-                //     for(int y=0;y<tile_size;y++) {
-                //       for(int x=0;x<tile_size;++x) {
-                //         std::printf("%c", rect(x,y)>0 ? '#' : '.');
-                //       }
-                //       std::printf("\n");
-                //     }
-                //     for(auto pt : poly.pts) {
-                //       std::printf("%g %g\n", pt.x, pt.y);
-                //     }
-                //   }
-                // std::printf("%d, %d, %ld\n", xt, yt, poly.size());
-                cache_poly.emplace_back(poly + p0);
-              }
-          }
-
-    }
-
-  return cache_poly;
 }

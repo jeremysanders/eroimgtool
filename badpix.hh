@@ -11,10 +11,13 @@ class BadPixTable
 public:
   BadPixTable(fitsfile *ff, int tm);
 
-  const PolyVec& getPolyMask(double t);
+  const PolyVec& getPolyMask(double t) { checkCache(t); return cache_poly; }
+  const Image<int>& getMask(double t) { checkCache(t); return cache_mask; }
 
 private:
-  void buildMask(double t);
+  void checkCache(double t);
+  void buildMaskImage(double t);
+  void buildMaskPoly();
 
 private:
   size_t num_entries;
