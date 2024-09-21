@@ -12,10 +12,13 @@
 #include "coords.hh"
 #include "image.hh"
 #include "instpar.hh"
+#include "mask.hh"
 
 int main()
 {
-  InstPar instpar(2);
+  const int tm = 1;
+
+  InstPar instpar(tm);
 
   int status = 0;
 
@@ -26,10 +29,11 @@ int main()
   fits_open_file(&ff, filename, READONLY, &status);
   check_fitsio_status(status);
 
-  BadPixTable bp(ff, 2);
-  GTITable gti(ff, 2);
-  AttitudeTable att(ff, 2);
-  Events events(ff, 2);
+  BadPixTable bp(ff, tm);
+  GTITable gti(ff, tm);
+  AttitudeTable att(ff, tm);
+  Events events(ff, tm);
+  Mask mask("em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz");
 
   std::printf("Making image\n");
   double src_ra = 57.3466206;

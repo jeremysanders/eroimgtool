@@ -114,5 +114,5 @@ InstPar::InstPar(int tm)
 
   fits_close_file(ff, &status);
   check_fitsio_status(status);
-  std::printf("  Done\n");
+  std::printf("  - done\n");
 }

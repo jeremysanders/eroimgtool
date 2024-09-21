@@ -149,7 +149,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
   return retn;
 }
 
-PolyVec mask_to_polygons(const Image<int>& inmask)
+PolyVec mask_to_polygons(const Image<int>& inmask, bool invert)
 {
   const int xw = inmask.xw;
   const int yw = inmask.yw;
@@ -158,7 +158,12 @@ PolyVec mask_to_polygons(const Image<int>& inmask)
   Image<int> mask(xw, yw);
   for(int y=0; y<yw; ++y)
     for(int x=0; x<xw; ++x)
-      mask(x,y) = inmask(x,y)>0 ? -1 : 0;
+      {
+        if(invert)
+          mask(x,y) = inmask(x,y)<=0 ? -1 : 0;
+        else
+          mask(x,y) = inmask(x,y)>0 ? -1 : 0;
+      }
 
   // output polygons
   std::vector<Poly> polys;

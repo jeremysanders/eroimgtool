@@ -3,6 +3,6 @@
 
 #include "image.hh"
 
-PolyVec mask_to_polygons(const Image<int>& img);
+PolyVec mask_to_polygons(const Image<int>& img, bool invert=false);
 
 #endif
