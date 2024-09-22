@@ -3,21 +3,23 @@
 
 #include <cmath>
 #include <tuple>
+
 #include "common.hh"
+#include "instpar.hh"
 
 class CoordConv
 {
 public:
-
-  CoordConv(double _x_platescale, double _y_platescale,
-            double _x_ref, double _y_ref)
-    : x_platescale(_x_platescale), y_platescale(_y_platescale),
-      x_ref(_x_ref), y_ref(_y_ref),
-      rad2xpix(1/(x_platescale * (DEG2RAD / 3600.))),
-      rad2ypix(1/(y_platescale * (DEG2RAD / 3600.))),
+  CoordConv(const InstPar& ip)
+    : x_platescale(ip.x_platescale),
+      y_platescale(ip.y_platescale),
+      x_ref(ip.x_ref),
+      y_ref(ip.y_ref),
+      rad2xpix(1/(ip.x_platescale * (DEG2RAD / 3600.))),
+      rad2ypix(1/(ip.y_platescale * (DEG2RAD / 3600.))),
       ra0(0), sindec0(0), cosdec0(0), rsin(0), rcos(0)
-    {
-    }
+  {
+  }
 
   // set telescope pointing from attitude
   void updatePointing(double _ra0, double _dec0, double _roll0)

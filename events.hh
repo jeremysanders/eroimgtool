@@ -4,10 +4,10 @@
 #include <vector>
 #include <fitsio.h>
 
-class Events
+class EventTable
 {
 public:
-  Events(fitsfile *ff);
+  EventTable(fitsfile *ff);
   void filter_tm(int tm);
   void filter_pi(float pimin, float pimax);
 

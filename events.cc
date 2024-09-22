@@ -7,7 +7,7 @@
 #include "events.hh"
 #include "common.hh"
 
-Events::Events(fitsfile *ff)
+EventTable::EventTable(fitsfile *ff)
 {
   int status = 0;
 
@@ -55,7 +55,7 @@ Events::Events(fitsfile *ff)
   std::printf("    - successfully read %ld entries\n", nrows);
 }
 
-void Events::filter_tm(int tm)
+void EventTable::filter_tm(int tm)
 {
   std::vector<size_t> idxs;
   for(size_t i=0; i != rawx.size(); ++i)
@@ -66,7 +66,7 @@ void Events::filter_tm(int tm)
   std::printf("    - filtered to TM%d, giving %ld entries\n", tm, num_entries);
 }
 
-void Events::filter_pi(float pimin, float pimax)
+void EventTable::filter_pi(float pimin, float pimax)
 {
   std::vector<size_t> idxs;
   for(size_t i=0; i != rawx.size(); ++i)
@@ -79,7 +79,7 @@ void Events::filter_pi(float pimin, float pimax)
 }
 
 // filter all columns to have indices given
-void Events::do_filter(const std::vector<size_t>& sel)
+void EventTable::do_filter(const std::vector<size_t>& sel)
 {
   rawx = selidx(rawx, sel);
   rawy = selidx(rawy, sel);

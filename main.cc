@@ -1,56 +1,39 @@
 #include <cmath>
 #include <cstdio>
+#include <memory>
 
-#include <fitsio.h>
-
-#include "badpix.hh"
-#include "gti.hh"
-#include "attitude.hh"
-#include "events.hh"
 #include "common.hh"
 #include "geom.hh"
 #include "coords.hh"
 #include "image.hh"
-#include "instpar.hh"
-#include "mask.hh"
-#include "mode.hh"
+#include "pars.hh"
 
 int main()
 {
-  const int tm = 2;
+  Pars pars;
+  pars.tm = 2;
+  pars.evt_fn = "em01_056102_020_ML00001_004_c946/evt.fits.gz";
+  pars.mask_fn = "em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz";
+  pars.out_fn = "test.fits";
+  pars.src_ra = 57.3466206;
+  pars.src_dec = -11.9909090;
+  pars.pixsize = 1;
 
-  InstPar instpar(tm);
+  InstPar instpar = pars.loadInstPar();
 
-  int status = 0;
+  auto [events, gti, att, bp] = pars.loadEventFile();
 
-  fitsfile* ff;
-
-  const char *filename = "em01_056102_020_ML00001_004_c946/evt.fits.gz";
-  std::printf("Opening file %s\n", filename);
-  fits_open_file(&ff, filename, READONLY, &status);
-  check_fitsio_status(status);
-
-  BadPixTable bp(ff, tm);
-  GTITable gti(ff, tm);
-  AttitudeTable att(ff, tm);
-  Events events(ff);
-  events.filter_tm(tm);
-  events.filter_pi(300,2300);
-  Mask mask("em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz");
+  Mask mask = pars.loadMask();
 
   std::printf("Making image\n");
-  double src_ra = 57.3466206;
-  double src_dec = -11.9909090;
 
-  CoordConv coordconv(instpar.x_platescale, instpar.y_platescale,
-                      instpar.x_ref, instpar.y_ref);
+  CoordConv coordconv(instpar);
 
-  Image<int> outimg(512, 512);
-  float xc = 255;
-  float yc = 255;
-  float pixscale = 1; //1/8.f;
+  Image<int> outimg(pars.xw, pars.yw);
+  float xc = pars.xw / 2;
+  float yc = pars.yw / 2;
 
-  ModeAverageFoV mode;
+  std::unique_ptr<Mode> mode(pars.createMode());
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
@@ -76,33 +59,33 @@ int main()
         continue;
 
       // get ccd coordinates of source
-      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(src_ra, src_dec);
+      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
 
       // skip if source is outsite allowed region
       Point srcccd(src_ccdx, src_ccdy);
-      if( ! mode.source_valid(srcccd) )
+      if( ! mode->source_valid(srcccd) )
         continue;
 
       // compute relative coordinates of photon
-      Point origin = mode.origin(srcccd);
+      Point origin = mode->origin(srcccd);
       Point relpt = evtpt - origin;
 
       // apply any necessary rotation for mode
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto mat = mode.rotation_matrix(att_roll, delpt);
+      auto mat = mode->rotation_matrix(att_roll, delpt);
 
       relpt = Point(relpt.x*mat[0]+relpt.y*mat[1],
                     relpt.x*mat[2]+relpt.y*mat[3]);
 
       // calculate coordinates in image and add to pixel
-      Point scalept = relpt/pixscale + Point(xc, yc);
+      Point scalept = relpt/pars.pixsize + Point(xc, yc);
       int px = int(std::round(scalept.x));
       int py = int(std::round(scalept.y));
       if(px>=0 && px<int(outimg.xw) && py>=0 && py<int(outimg.yw))
         outimg(px, py) += 1;
     }
 
-  write_fits_image("test.fits", outimg, xc, yc, pixscale);
+  write_fits_image(pars.out_fn, outimg, xc, yc, pars.pixsize);
 
 
   /*
@@ -148,8 +131,8 @@ int main()
   std::fclose(f);
   */
 
-  fits_close_file(ff, &status);
-  check_fitsio_status(status);
+  // fits_close_file(ff, &status);
+  // check_fitsio_status(status);
 
   return 0;
 }
