@@ -33,7 +33,9 @@ int main()
   BadPixTable bp(ff, tm);
   GTITable gti(ff, tm);
   AttitudeTable att(ff, tm);
-  Events events(ff, tm);
+  Events events(ff);
+  events.filter_tm(tm);
+  events.filter_pi(300,2300);
   Mask mask("em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz");
 
   std::printf("Making image\n");
@@ -48,7 +50,7 @@ int main()
   float yc = 255;
   float pixscale = 1; //1/8.f;
 
-  ModeAverageFoVSky mode;
+  ModeAverageFoV mode;
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
@@ -86,8 +88,8 @@ int main()
       Point relpt = evtpt - origin;
 
       // apply any necessary rotation for mode
-      auto mat = mode.rotation_matrix(att_roll, srcccd-Point(instpar.x_ref,
-                                                             instpar.y_ref));
+      Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
+      auto mat = mode.rotation_matrix(att_roll, delpt);
 
       relpt = Point(relpt.x*mat[0]+relpt.y*mat[1],
                     relpt.x*mat[2]+relpt.y*mat[3]);
