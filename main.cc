@@ -19,8 +19,7 @@ void imageMode(const Pars& pars)
   CoordConv coordconv(instpar);
 
   Image<int> outimg(pars.xw, pars.yw);
-  float xc = pars.xw / 2;
-  float yc = pars.yw / 2;
+  Point ptc = pars.imageCentre();
 
   std::unique_ptr<ProjMode> projmode(pars.createProjMode());
 
@@ -37,14 +36,8 @@ void imageMode(const Pars& pars)
       coordconv.updatePointing(att_ra, att_dec, att_roll);
 
       // ignore masked regions
-      PolyVec ccd_polys(mask.as_ccd_poly(coordconv));
-      bool masked = false;
-      for(auto& poly : ccd_polys)
-        if( poly.is_inside(evtpt) )
-          {
-            masked = true; break;
-          }
-      if(masked)
+      PolyVec ccd_maskedpolys(mask.as_ccd_poly(coordconv));
+      if( is_inside(ccd_maskedpolys, evtpt) )
         continue;
 
       // get ccd coordinates of source
@@ -65,7 +58,7 @@ void imageMode(const Pars& pars)
       relpt = mat.rotate(relpt);
 
       // calculate coordinates in image and add to pixel
-      Point scalept = relpt/pars.pixsize + Point(xc, yc);
+      Point scalept = relpt/pars.pixsize + ptc;
       int px = int(std::round(scalept.x));
       int py = int(std::round(scalept.y));
       if(px>=0 && px<int(outimg.xw) && py>=0 && py<int(outimg.yw))
@@ -73,7 +66,7 @@ void imageMode(const Pars& pars)
     }
 
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, outimg, xc, yc, pars.pixsize);
+  write_fits_image(pars.out_fn, outimg, ptc.x, ptc.y, pars.pixsize);
 }
 
 void exposMode(const Pars& pars)
@@ -87,13 +80,12 @@ void exposMode(const Pars& pars)
   CoordConv coordconv(instpar);
 
   Image<float> outimg(pars.xw, pars.yw, 0.f);
-  float xc = pars.xw / 2;
-  float yc = pars.yw / 2;
+  Point ptc = pars.imageCentre();
 
   std::unique_ptr<ProjMode> mode(pars.createProjMode());
 
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, outimg, xc, yc, pars.pixsize);
+  write_fits_image(pars.out_fn, outimg, ptc.x, ptc.y, pars.pixsize);
 
 /*
   for(auto& poly : polys)

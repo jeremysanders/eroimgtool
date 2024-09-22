@@ -7,6 +7,7 @@
 #include "attitude.hh"
 #include "badpix.hh"
 #include "events.hh"
+#include "geom.hh"
 #include "gti.hh"
 #include "instpar.hh"
 #include "mask.hh"
@@ -21,6 +22,7 @@ public:
   InstPar loadInstPar() const;
   Mask loadMask() const;
   ProjMode* createProjMode() const;
+  Point imageCentre() const;
 
 public:
   enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY};
@@ -40,6 +42,9 @@ public:
   unsigned xw, yw;
   // output pixel size
   float pixsize;
+
+  // time delta for exposure map
+  double deltat;
 
   // filenames
   std::string evt_fn;

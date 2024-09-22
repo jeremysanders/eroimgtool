@@ -81,6 +81,15 @@ struct Poly
 
 typedef std::vector<Poly> PolyVec;
 
+// is point inside any of the polygons?
+inline bool is_inside(const PolyVec& pv, const Point& pt)
+{
+  for(auto& poly : pv)
+    if( poly.is_inside(pt) )
+      return true;
+  return false;
+}
+
 // for defining a 2d rotation
 struct RotationMatrix
 {

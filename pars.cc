@@ -12,7 +12,8 @@ Pars::Pars()
   pimin(300), pimax(2300),
   projmode(AVERAGE_FOV),
   xw(512), yw(512),
-  pixsize(1)
+  pixsize(1),
+  deltat(0.01)
 {
 }
 
@@ -60,4 +61,9 @@ ProjMode* Pars::createProjMode() const
     default:
       throw std::runtime_error("Invalid mode");
     }
+}
+
+Point Pars::imageCentre() const
+{
+  return Point(xw/2, yw/2);
 }
