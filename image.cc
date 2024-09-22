@@ -1,5 +1,5 @@
 #include <limits>
-#include <unistd.h>
+#include <filesystem>
 
 #include <fitsio.h>
 
@@ -55,7 +55,7 @@ void write_fits_image(const std::string& filename,
                       bool overwrite)
 {
   if(overwrite)
-    unlink(filename.c_str());
+    std::filesystem::remove(filename);
 
   int status = 0;
 
@@ -82,7 +82,7 @@ void write_fits_image(const std::string& filename,
                       bool overwrite)
 {
   if(overwrite)
-    unlink(filename.c_str());
+    std::filesystem::remove(filename);
 
   int status = 0;
 
