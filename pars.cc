@@ -10,7 +10,7 @@ Pars::Pars()
 : tm(1),
   src_ra(0), src_dec(0),
   pimin(300), pimax(2300),
-  mode(AVERAGE_FOV),
+  projmode(AVERAGE_FOV),
   xw(512), yw(512),
   pixsize(1)
 {
@@ -49,14 +49,14 @@ Mask Pars::loadMask() const
   return Mask(mask_fn);
 }
 
-Mode* Pars::createMode() const
+ProjMode* Pars::createProjMode() const
 {
-  switch(mode)
+  switch(projmode)
     {
     case AVERAGE_FOV:
-      return new ModeAverageFoV();
+      return new ProjModeAverageFoV();
     case AVERAGE_FOV_SKY:
-      return new ModeAverageFoVSky();
+      return new ProjModeAverageFoVSky();
     default:
       throw std::runtime_error("Invalid mode");
     }

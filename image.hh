@@ -70,4 +70,9 @@ void write_fits_image(const std::string& filename,
                       float xc, float yc, float pixscale,
                       bool overwrite=true);
 
+void write_fits_image(const std::string& filename,
+                      const Image<float>& img,
+                      float xc, float yc, float pixscale,
+                      bool overwrite=true);
+
 #endif

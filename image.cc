@@ -70,7 +70,33 @@ void write_fits_image(const std::string& filename,
                  const_cast<int*>(&img.arr[0]),
                  &status);
   check_fitsio_status(status);
+  write_header(ff, xc, yc, pixscale);
 
+  fits_close_file(ff, &status);
+  check_fitsio_status(status);
+}
+
+void write_fits_image(const std::string& filename,
+                      const Image<float>& img,
+                      float xc, float yc, float pixscale,
+                      bool overwrite)
+{
+  if(overwrite)
+    unlink(filename.c_str());
+
+  int status = 0;
+
+  fitsfile* ff;
+  fits_create_file(&ff, filename.c_str(), &status);
+  check_fitsio_status(status);
+
+  long dims[] = {img.xw, img.yw};
+  long fpixel[] = {1,1};
+  fits_create_img(ff, FLOAT_IMG, 2, dims, &status);
+  fits_write_pix(ff, TFLOAT, fpixel, img.xw*img.yw,
+                 const_cast<float*>(&img.arr[0]),
+                 &status);
+  check_fitsio_status(status);
   write_header(ff, xc, yc, pixscale);
 
   fits_close_file(ff, &status);

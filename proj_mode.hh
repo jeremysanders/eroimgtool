@@ -5,7 +5,7 @@
 
 #include "geom.hh"
 
-class Mode
+class ProjMode
 {
 public:
   // use source when it's in the current position?
@@ -19,14 +19,14 @@ public:
 };
 
 // average field of view, in CCD coordinates
-class ModeAverageFoV : public Mode
+class ProjModeAverageFoV : public ProjMode
 {
 public:
   bool source_valid(Point ccdpt) const;
 };
 
 // average FoV, in sky-relative coordinates
-class ModeAverageFoVSky : public Mode
+class ProjModeAverageFoVSky : public ProjMode
 {
 public:
   bool source_valid(Point ccdpt) const;

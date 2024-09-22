@@ -8,24 +8,13 @@
 #include "image.hh"
 #include "pars.hh"
 
-int main()
+void imageMode(const Pars& pars)
 {
-  Pars pars;
-  pars.tm = 2;
-  pars.evt_fn = "em01_056102_020_ML00001_004_c946/evt.fits.gz";
-  pars.mask_fn = "em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz";
-  pars.out_fn = "test.fits";
-  pars.src_ra = 57.3466206;
-  pars.src_dec = -11.9909090;
-  pars.pixsize = 1;
-
   InstPar instpar = pars.loadInstPar();
-
   auto [events, gti, att, bp] = pars.loadEventFile();
-
   Mask mask = pars.loadMask();
 
-  std::printf("Making image\n");
+  std::printf("Building image\n");
 
   CoordConv coordconv(instpar);
 
@@ -33,7 +22,7 @@ int main()
   float xc = pars.xw / 2;
   float yc = pars.yw / 2;
 
-  std::unique_ptr<Mode> mode(pars.createMode());
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
 
   for(size_t i=0; i!=events.num_entries; ++i)
     {
@@ -63,16 +52,16 @@ int main()
 
       // skip if source is outsite allowed region
       Point srcccd(src_ccdx, src_ccdy);
-      if( ! mode->source_valid(srcccd) )
+      if( ! projmode->source_valid(srcccd) )
         continue;
 
       // compute relative coordinates of photon
-      Point origin = mode->origin(srcccd);
+      Point origin = projmode->origin(srcccd);
       Point relpt = evtpt - origin;
 
       // apply any necessary rotation for mode
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto mat = mode->rotation_matrix(att_roll, delpt);
+      auto mat = projmode->rotation_matrix(att_roll, delpt);
 
       relpt = Point(relpt.x*mat[0]+relpt.y*mat[1],
                     relpt.x*mat[2]+relpt.y*mat[3]);
@@ -85,12 +74,30 @@ int main()
         outimg(px, py) += 1;
     }
 
+  std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
+  write_fits_image(pars.out_fn, outimg, xc, yc, pars.pixsize);
+}
+
+void exposMode(const Pars& pars)
+{
+  InstPar instpar = pars.loadInstPar();
+  auto [events, gti, att, bp] = pars.loadEventFile();
+  Mask mask = pars.loadMask();
+
+  std::printf("Building exposure map\n");
+
+  CoordConv coordconv(instpar);
+
+  Image<float> outimg(pars.xw, pars.yw, 0.f);
+  float xc = pars.xw / 2;
+  float yc = pars.yw / 2;
+
+  std::unique_ptr<ProjMode> mode(pars.createProjMode());
+
+  std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
   write_fits_image(pars.out_fn, outimg, xc, yc, pars.pixsize);
 
-
-  /*
-  Image<float> img(384,384,0.f);
-
+/*
   for(auto& poly : polys)
     {
       Poly bppoly = poly;
@@ -118,21 +125,22 @@ int main()
             img(x,y) += clipped.area();
           }
     }
+*/
+}
 
-  FILE* f = std::fopen("test.dat", "w");
-  for(int y=0; y<int(img.yw); ++y)
-    {
-      for(int x=0; x<int(img.xw); ++x)
-        {
-          std::fprintf(f, "%.4f ", img(x,y));
-        }
-      std::fprintf(f, "\n");
-    }
-  std::fclose(f);
-  */
+int main()
+{
+  Pars pars;
+  pars.tm = 2;
+  pars.evt_fn = "em01_056102_020_ML00001_004_c946/evt.fits.gz";
+  pars.mask_fn = "em01_056102_020_ML00001_004_c946/030_mask_final.fits.gz";
+  pars.out_fn = "test.fits";
+  pars.src_ra = 57.3466206;
+  pars.src_dec = -11.9909090;
+  pars.pixsize = 1;
 
-  // fits_close_file(ff, &status);
-  // check_fitsio_status(status);
+  //imageMode(pars);
+  exposMode(pars);
 
   return 0;
 }

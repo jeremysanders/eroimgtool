@@ -10,7 +10,7 @@
 #include "gti.hh"
 #include "instpar.hh"
 #include "mask.hh"
-#include "mode.hh"
+#include "proj_mode.hh"
 
 class Pars
 {
@@ -20,10 +20,10 @@ public:
              AttitudeTable,BadPixTable> loadEventFile() const;
   InstPar loadInstPar() const;
   Mask loadMask() const;
-  Mode* createMode() const;
+  ProjMode* createProjMode() const;
 
 public:
-  enum modetype {AVERAGE_FOV, AVERAGE_FOV_SKY};
+  enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY};
 
 public:
   // TM to process
@@ -34,7 +34,7 @@ public:
   float pimin, pimax;
 
   // operating mode
-  modetype mode;
+  projmodetype projmode;
 
   // output image size
   unsigned xw, yw;
