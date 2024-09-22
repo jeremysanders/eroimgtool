@@ -2,9 +2,9 @@
 #include "common.hh"
 #include "proj_mode.hh"
 
-std::array<float,4> ProjMode::rotation_matrix(double roll, Point delccd) const
+RotationMatrix ProjMode::rotationMatrix(double roll, Point delccd) const
 {
-  return {1,0,0,1};
+  return RotationMatrix();
 }
 
 Point ProjMode::origin(Point ccdpt) const
@@ -14,7 +14,7 @@ Point ProjMode::origin(Point ccdpt) const
 
 ////////////////////////////////////////////////////////////////////
 
-bool ProjModeAverageFoV::source_valid(Point ccdpt) const
+bool ProjModeAverageFoV::sourceValid(Point ccdpt) const
 {
   float rad2 = sqr(ccdpt.x-192) + sqr(ccdpt.y-192);
 
@@ -24,7 +24,7 @@ bool ProjModeAverageFoV::source_valid(Point ccdpt) const
 
 ////////////////////////////////////////////////////////////////////
 
-bool ProjModeAverageFoVSky::source_valid(Point ccdpt) const
+bool ProjModeAverageFoVSky::sourceValid(Point ccdpt) const
 {
   float rad2 = sqr(ccdpt.x-192) + sqr(ccdpt.y-192);
 
@@ -32,12 +32,12 @@ bool ProjModeAverageFoVSky::source_valid(Point ccdpt) const
   return rad2 < sqr(192);
 }
 
-std::array<float,4> ProjModeAverageFoVSky::rotation_matrix(double roll,
-                                                           Point delccd) const
+RotationMatrix ProjModeAverageFoVSky::rotationMatrix(double roll,
+                                                     Point delccd) const
 {
   float c = std::cos((270-roll)*DEG2RAD);
   float s = std::sin((270-roll)*DEG2RAD);
-  return {c,-s,s,c};
+  return RotationMatrix(c, -s, s, c);
 }
 
 

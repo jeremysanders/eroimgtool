@@ -81,6 +81,18 @@ struct Poly
 
 typedef std::vector<Poly> PolyVec;
 
+// for defining a 2d rotation
+struct RotationMatrix
+{
+  RotationMatrix() : m00(1), m01(0), m10(0), m11(1) {};
+  RotationMatrix(float v00, float v01, float v10, float v11)
+    : m00(v00), m01(v01), m10(v10), m11(v11) {};
+  Point rotate(Point pt) const { return Point(pt.x*m00+pt.y*m01,
+                                              pt.x*m10+pt.y*m11); }
+
+  float m00, m01, m10, m11;
+};
+
 // clip polygons (polys must be defined the right way round)
 // opoly is overwritten (not returned, so we don't have to reallocate)
 void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);

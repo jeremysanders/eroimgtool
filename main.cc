@@ -52,7 +52,7 @@ void imageMode(const Pars& pars)
 
       // skip if source is outsite allowed region
       Point srcccd(src_ccdx, src_ccdy);
-      if( ! projmode->source_valid(srcccd) )
+      if( ! projmode->sourceValid(srcccd) )
         continue;
 
       // compute relative coordinates of photon
@@ -61,10 +61,8 @@ void imageMode(const Pars& pars)
 
       // apply any necessary rotation for mode
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto mat = projmode->rotation_matrix(att_roll, delpt);
-
-      relpt = Point(relpt.x*mat[0]+relpt.y*mat[1],
-                    relpt.x*mat[2]+relpt.y*mat[3]);
+      auto mat = projmode->rotationMatrix(att_roll, delpt);
+      relpt = mat.rotate(relpt);
 
       // calculate coordinates in image and add to pixel
       Point scalept = relpt/pars.pixsize + Point(xc, yc);
