@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <stdexcept>
 
 #include "common.hh"
 #include "geom.hh"
@@ -69,10 +70,20 @@ void imageMode(const Pars& pars)
   write_fits_image(pars.out_fn, outimg, ptc.x, ptc.y, pars.pixsize);
 }
 
+static std::vector<Rect> getPolysBounds(const PolyVec& polys)
+{
+  std::vector<Rect> bounds;
+  bounds.reserve(polys.size());
+  for(auto& poly : polys)
+    bounds.emplace_back( poly.bounds() );
+  return bounds;
+}
+
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
   auto [events, gti, att, bp] = pars.loadEventFile();
+
   Mask mask = pars.loadMask();
 
   std::printf("Building exposure map\n");
@@ -80,42 +91,118 @@ void exposMode(const Pars& pars)
   CoordConv coordconv(instpar);
 
   Image<float> outimg(pars.xw, pars.yw, 0.f);
-  Point ptc = pars.imageCentre();
+  Point imgcen = pars.imageCentre();
 
-  std::unique_ptr<ProjMode> mode(pars.createProjMode());
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+
+  // predefine polygon for pixel
+  Poly pixp, clipped, clippedmask;
+  for(int i=0; i<4; ++i)
+    pixp.add(Point());
+
+  gti.num = 100;
+
+  for(size_t gtii = 0; gtii != gti.num; ++gtii)
+    {
+      std::printf("%ld %ld\n", gtii, gti.num);
+
+      double tstart = gti.start[gtii];
+      double tstop = gti.stop[gtii];
+
+      if(tstop<=tstart)
+        throw std::runtime_error("invalid GTI found");
+      int numt = int(std::ceil((tstop - tstart) / pars.deltat));
+      double deltat = (tstop - tstart) / numt;
+      float deltatf = float(deltat);
+
+      for(int ti=0; ti<numt; ++ti)
+        {
+          double t = tstart + (ti+0.5)*deltat;
+
+          // attitude at time
+          auto [att_ra, att_dec, att_roll] = att.interpolate(t);
+          coordconv.updatePointing(att_ra, att_dec, att_roll);
+
+          // get ccd coordinates of source
+          auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+
+          // skip if source is outsite allowed region
+          Point srcccd(src_ccdx, src_ccdy);
+          if( ! projmode->sourceValid(srcccd) )
+            continue;
+
+          Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
+          auto mat = projmode->rotationMatrix(att_roll, delpt);
+          Point projorigin = projmode->origin(srcccd);
+
+          // polygons defining detector
+          PolyVec detpolys(bp.getPolyMask(t));
+          applyShiftRotationScale(detpolys, mat, projorigin-imgcen, 1/pars.pixsize);
+
+          // polygons with bad regions
+          PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
+          applyShiftRotationScale(maskedpolys, mat, projorigin-imgcen, 1/pars.pixsize);
+          auto maskedbounds = getPolysBounds(maskedpolys);
+
+          // now find pixels which overlap with detector regions
+          for(auto& detpoly : detpolys)
+            {
+              Rect detbounds( detpoly.bounds() );
+              // std::printf("%.1f %.1f %.1f %.1f\n", detbounds.tl.x, detbounds.tl.y,
+              //             detbounds.br.x, detbounds.br.y);
+
+              // box overlapping with output image
+              int minx = std::max(int(std::floor(detbounds.tl.x)), 0);
+              int maxx = std::min(int( std::ceil(detbounds.br.x)), int(pars.xw)-1)+1;
+              int miny = std::max(int(std::floor(detbounds.tl.y)), 0);
+              int maxy = std::min(int( std::ceil(detbounds.br.y)), int(pars.yw)-1)+1;
+              if( maxx <= minx || maxy <= miny )
+                continue;
+
+              // std::printf("rng %d %d %d %d\n", minx, maxx, miny, maxy);
+
+              // iterate over output pixels
+              for(int y=miny; y<maxy; ++y)
+                for(int x=minx; x<maxx; ++x)
+                  {
+                    // update pixel coordinates polygon
+                    pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
+                    pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
+                    pixp[2].x = x+0.5f; pixp[2].y = y+0.5f;
+                    pixp[3].x = x+0.5f; pixp[3].y = y-0.5f;
+
+                    // clip pixel to detector poly
+                    poly_clip(detpoly, pixp, clipped);
+
+                    // pixel overlaps with detector poly
+                    if(! clipped.empty() )
+                      {
+                        float area = clipped.area();
+                        Rect cb(clipped.bounds());
+
+                        // check whether it overlaps with any masked region
+                        // if so, subtract any overlapping area
+                        for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
+                          {
+                            if( cb.overlap(maskedbounds[mi]) )
+                              {
+                                poly_clip(clipped, maskedpolys[mi], clippedmask);
+                                if( ! clippedmask.empty() )
+                                  area -= clippedmask.area();
+                              }
+                          }
+
+                        outimg(x, y) += area * deltatf;
+                      }
+                  } // pixels
+            } // detector polygons
+
+        } // gti subdivision
+
+    } // gti
 
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, outimg, ptc.x, ptc.y, pars.pixsize);
-
-/*
-  for(auto& poly : polys)
-    {
-      Poly bppoly = poly;
-      Rect bound = bppoly.bounds();
-
-      const int ylo = std::max(0, int(std::floor(bound.tl.y)));
-      const int xlo = std::max(0, int(std::floor(bound.tl.x)));
-      const int yhi = std::min(int(img.yw)-1, int(std::ceil(bound.br.y)));
-      const int xhi = std::min(int(img.xw)-1, int(std::ceil(bound.br.x)));
-
-      // predefine polygon for pixel
-      Poly pixp, clipped;
-      for(int i=0; i<4; ++i)
-        pixp.add(Point());
-
-      for(int y=ylo; y<=yhi; ++y)
-        for(int x=xlo; x<=xhi; ++x)
-          {
-            pixp[0].x = x+0.5f; pixp[0].y = y+0.5f;
-            pixp[1].x = x+0.5f; pixp[1].y = y+1.5f;
-            pixp[2].x = x+1.5f; pixp[2].y = y+1.5f;
-            pixp[3].x = x+1.5f; pixp[3].y = y+0.5f;
-
-            poly_clip(bppoly, pixp, clipped);
-            img(x,y) += clipped.area();
-          }
-    }
-*/
+  write_fits_image(pars.out_fn, outimg, imgcen.x, imgcen.y, pars.pixsize);
 }
 
 int main()
@@ -128,6 +215,7 @@ int main()
   pars.src_ra = 57.3466206;
   pars.src_dec = -11.9909090;
   pars.pixsize = 1;
+  //pars.projmode = Pars::WHOLE_DET;
 
   //imageMode(pars);
   exposMode(pars);

@@ -25,7 +25,7 @@ public:
   Point imageCentre() const;
 
 public:
-  enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY};
+  enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY, WHOLE_DET};
 
 public:
   // TM to process

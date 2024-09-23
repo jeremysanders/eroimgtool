@@ -58,6 +58,8 @@ ProjMode* Pars::createProjMode() const
       return new ProjModeAverageFoV();
     case AVERAGE_FOV_SKY:
       return new ProjModeAverageFoVSky();
+    case WHOLE_DET:
+      return new ProjModeDet();
     default:
       throw std::runtime_error("Invalid mode");
     }

@@ -42,3 +42,15 @@ RotationMatrix ProjModeAverageFoVSky::rotationMatrix(double roll,
 
 
 
+////////////////////////////////////////////////////////////////////
+
+
+Point ProjModeDet::origin(Point ccdpt) const
+{
+  return Point(192,192);
+}
+
+bool ProjModeDet::sourceValid(Point ccdpt) const
+{
+  return true;
+}

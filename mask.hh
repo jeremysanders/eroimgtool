@@ -20,6 +20,7 @@ typedef std::vector<CoordVec> CoordVecVec;
 class Mask
 {
 public:
+  Mask();
   Mask(const std::string& filename);
 
   PolyVec as_ccd_poly(const CoordConv& cc) const;

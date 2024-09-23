@@ -91,6 +91,10 @@ namespace
 
 } // namespace
 
+Mask::Mask()
+{
+}
+
 Mask::Mask(const std::string& filename)
 {
   int status = 0;

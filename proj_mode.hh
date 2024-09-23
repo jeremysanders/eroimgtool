@@ -31,5 +31,13 @@ public:
   RotationMatrix rotationMatrix(double roll, Point delccd) const;
 };
 
+// mode for testing - just Det coordinates without tracking source
+class ProjModeDet : public ProjMode
+{
+public:
+  bool sourceValid(Point ccdpt) const;
+  Point origin(Point ccdpt) const;
+};
+
 
 #endif

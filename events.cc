@@ -40,6 +40,20 @@ EventTable::EventTable(fitsfile *ff)
   read_fits_column(ff, "SUBX", TFLOAT, nrows, &subx[0]);
   read_fits_column(ff, "SUBY", TFLOAT, nrows, &suby[0]);
 
+  // for(unsigned i=0; i<1000000; ++i)
+  //   {
+  //     rawx.push_back( rand() % 384 + 1);
+  //     rawy.push_back( rand() % 384 + 1);
+  //     tm_nr.push_back(2);
+  //     ra.push_back(0);
+  //     dec.push_back(0);
+  //     time.push_back(time[rand() % nrows]);
+  //     pi.push_back(1000);
+  //     subx.push_back( (rand()*1./RAND_MAX) - 0.5 );
+  //     suby.push_back( (rand()*1./RAND_MAX) - 0.5 );
+  //   }
+  // nrows = rawx.size();
+
   // combine rawx/y and subx/y
   ccdx.reserve(nrows); ccdy.reserve(nrows);
   for(long i=0; i<nrows; ++i)

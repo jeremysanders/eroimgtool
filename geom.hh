@@ -17,16 +17,37 @@ struct Point
   Point operator-(Point o) const { return Point(x-o.x,y-o.y); }
   Point operator*(float v) const { return Point(x*v, y*v); }
   Point operator/(float v) const { return Point(x/v, y/v); }
+  Point operator-() const { return Point(-x, -y); }
 
   float x, y;
 };
 
 // tl: top-left, br: bottom-right
+// top-left has min coordinates, while bot-right has max coordinates
 struct Rect
 {
   Rect() {}
   Rect(Point _tl, Point _br) : tl(_tl), br(_br) {}
+  bool overlap(const Rect& o) const
+  {
+    return (tl.x < o.br.x) && (br.x > o.tl.x) &&
+      (tl.y < o.br.y) && (br.y > o.tl.y);
+  }
+
   Point tl, br;
+};
+
+
+// for defining a 2d rotation
+struct RotationMatrix
+{
+  RotationMatrix() : m00(1), m01(0), m10(0), m11(1) {};
+  RotationMatrix(float v00, float v01, float v10, float v11)
+    : m00(v00), m01(v01), m10(v10), m11(v11) {};
+  Point rotate(Point pt) const { return Point(pt.x*m00+pt.y*m01,
+                                              pt.x*m10+pt.y*m11); }
+
+  float m00, m01, m10, m11;
 };
 
 struct Poly
@@ -75,6 +96,7 @@ struct Poly
   // rotate polygon
   void rotate(float theta);
 
+public:
   // points stored as simple vector
   std::vector<Point> pts;
 };
@@ -90,20 +112,11 @@ inline bool is_inside(const PolyVec& pv, const Point& pt)
   return false;
 }
 
-// for defining a 2d rotation
-struct RotationMatrix
-{
-  RotationMatrix() : m00(1), m01(0), m10(0), m11(1) {};
-  RotationMatrix(float v00, float v01, float v10, float v11)
-    : m00(v00), m01(v01), m10(v10), m11(v11) {};
-  Point rotate(Point pt) const { return Point(pt.x*m00+pt.y*m01,
-                                              pt.x*m10+pt.y*m11); }
-
-  float m00, m01, m10, m11;
-};
-
 // clip polygons (polys must be defined the right way round)
 // opoly is overwritten (not returned, so we don't have to reallocate)
 void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);
+
+// shift by orig, apply rotation matrix, then scale output
+void applyShiftRotationScale(PolyVec& polys, const RotationMatrix& mat, Point orig, float scale);
 
 #endif

@@ -1,7 +1,7 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -O2 -std=c++17 -Wall -g
-LDFLAGS = -lcfitsio -lwcs
+CXXFLAGS = -O2 -std=c++17 -Wall -g -I${HEADAS}/include
+LDFLAGS = -L${HEADAS}/lib -lcfitsio -lwcs-7.3.1
 
 # Output program
 BIN = eroimgtool
