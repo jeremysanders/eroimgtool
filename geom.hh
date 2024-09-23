@@ -53,9 +53,9 @@ struct RotationMatrix
 struct Poly
 {
   Poly() {}
-  Poly(const std::vector<Point> _pts)
-    : pts(_pts)
-  {}
+  Poly(size_t n) : pts(n) {}
+  Poly(const std::vector<Point> _pts) : pts(_pts) {}
+
   Point& operator[](size_t idx) { return pts[idx]; }
   Point operator[](size_t idx) const { return pts[idx]; }
   size_t size() const { return pts.size(); }
@@ -116,7 +116,8 @@ inline bool is_inside(const PolyVec& pv, const Point& pt)
 // opoly is overwritten (not returned, so we don't have to reallocate)
 void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);
 
-// shift by orig, apply rotation matrix, then scale output
-void applyShiftRotationScale(PolyVec& polys, const RotationMatrix& mat, Point orig, float scale);
+// move to origin origrot, apply rotation matrix, then scale output, then shift to origimg
+void applyShiftRotationScaleShift(PolyVec& polys, const RotationMatrix& mat, Point origrot,
+                                  float scale, Point origimg);
 
 #endif

@@ -172,7 +172,8 @@ bool Poly::is_inside(Point pt) const
   return count % 2 != 0;
 }
 
-void applyShiftRotationScale(PolyVec& polys, const RotationMatrix& mat, Point orig, float scale)
+void applyShiftRotationScaleShift(PolyVec& polys, const RotationMatrix& mat, Point origrot,
+                                  float scale, Point origimg)
 {
   float m00 = mat.m00*scale;
   float m01 = mat.m01*scale;
@@ -182,10 +183,10 @@ void applyShiftRotationScale(PolyVec& polys, const RotationMatrix& mat, Point or
   for(auto& poly : polys)
     for(size_t i=0; i!=poly.size(); ++i)
       {
-        float dx = poly[i].x - orig.x;
-        float dy = poly[i].y - orig.y;
-        poly[i].x = dx*m00 + dy*m01;
-        poly[i].y = dx*m10 + dy*m11;
+        float dx = poly[i].x - origrot.x;
+        float dy = poly[i].y - origrot.y;
+        poly[i].x = dx*m00 + dy*m01 + origimg.x;
+        poly[i].y = dx*m10 + dy*m11 + origimg.y;
       }
 }
 

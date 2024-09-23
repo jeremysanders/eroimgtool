@@ -1,7 +1,9 @@
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
+#include <thread>
 
 #include "common.hh"
 #include "geom.hh"
@@ -79,6 +81,130 @@ static std::vector<Rect> getPolysBounds(const PolyVec& polys)
   return bounds;
 }
 
+struct TimeSeg
+{
+  TimeSeg() {}
+  TimeSeg(size_t _idx, double _t, float _dt) : idx(_idx), t(_t), dt(_dt) {}
+
+  size_t idx;
+  double t;
+  float dt;
+};
+
+void processGTIs(size_t num,
+                 std::vector<TimeSeg>& times,
+                 std::mutex& mutex,
+                 Pars pars, GTITable gti, AttitudeTable att, BadPixTable bp,
+                 Mask mask, InstPar instpar,
+                 Image<float>& finalimg)
+{
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  CoordConv coordconv(instpar);
+  Point imgcen = pars.imageCentre();
+
+  // output image
+  Image<float> img(pars.xw, pars.yw, 0.f);
+
+  // predefine polygon for pixel
+  Poly pixp(4);
+  // these contain the clipped pixels, with detector, and with mask
+  Poly clipped, clippedmask;
+
+  for(;;)
+    {
+      // get next time to process
+      TimeSeg timeseg;
+      {
+        std::lock_guard<std::mutex> lock(mutex);
+        if(times.empty())
+          {
+            // add our part to the total and return
+            finalimg.arr += img.arr;
+            return;
+          }
+        timeseg = times.back();
+        times.pop_back();
+      }
+      auto [att_ra, att_dec, att_roll] = att.interpolate(timeseg.t);
+      coordconv.updatePointing(att_ra, att_dec, att_roll);
+
+      // get ccd coordinates of source
+      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+
+      // skip if source is outsite allowed region
+      Point srcccd(src_ccdx, src_ccdy);
+      if( ! projmode->sourceValid(srcccd) )
+        continue;
+
+      if( timeseg.idx % 200 == 0 )
+        std::printf("Iteration %.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
+
+      Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
+      auto mat = projmode->rotationMatrix(att_roll, delpt);
+      Point projorigin = projmode->origin(srcccd);
+
+      // polygons defining detector
+      PolyVec detpolys(bp.getPolyMask(timeseg.t));
+      applyShiftRotationScaleShift(detpolys, mat, projorigin, 1/pars.pixsize, imgcen);
+
+      // polygons with bad regions
+      PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
+      applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
+      auto maskedbounds = getPolysBounds(maskedpolys);
+
+      // now find pixels which overlap with detector regions
+      for(auto& detpoly : detpolys)
+        {
+          Rect detbounds( detpoly.bounds() );
+
+          // box overlapping with output image
+          int minx = std::max(int(std::floor(detbounds.tl.x)), 0);
+          int maxx = std::min(int( std::ceil(detbounds.br.x)), int(pars.xw)-1)+1;
+          int miny = std::max(int(std::floor(detbounds.tl.y)), 0);
+          int maxy = std::min(int( std::ceil(detbounds.br.y)), int(pars.yw)-1)+1;
+          if( maxx <= minx || maxy <= miny )
+            continue;
+
+          // iterate over output pixels
+          for(int y=miny; y<maxy; ++y)
+            for(int x=minx; x<maxx; ++x)
+              {
+                // update pixel coordinates polygon
+                pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
+                pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
+                pixp[2].x = x+0.5f; pixp[2].y = y+0.5f;
+                pixp[3].x = x+0.5f; pixp[3].y = y-0.5f;
+
+                // clip pixel to detector poly
+                poly_clip(detpoly, pixp, clipped);
+
+                // pixel overlaps with detector poly
+                if(! clipped.empty() )
+                  {
+                    float area = clipped.area();
+                    Rect cb(clipped.bounds());
+
+                    // check whether it overlaps with any masked region
+                    // if so, subtract any overlapping area
+                    for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
+                      {
+                        if( cb.overlap(maskedbounds[mi]) )
+                          {
+                            poly_clip(clipped, maskedpolys[mi], clippedmask);
+                            if( ! clippedmask.empty() )
+                              area -= clippedmask.area();
+                          }
+                      }
+
+                    img(x, y) += area * timeseg.dt;
+                  }
+              } // pixels
+        } // detector polygons
+
+    } // input times
+
+}
+
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
@@ -88,24 +214,10 @@ void exposMode(const Pars& pars)
 
   std::printf("Building exposure map\n");
 
-  CoordConv coordconv(instpar);
-
-  Image<float> outimg(pars.xw, pars.yw, 0.f);
-  Point imgcen = pars.imageCentre();
-
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
-
-  // predefine polygon for pixel
-  Poly pixp, clipped, clippedmask;
-  for(int i=0; i<4; ++i)
-    pixp.add(Point());
-
-  gti.num = 100;
-
-  for(size_t gtii = 0; gtii != gti.num; ++gtii)
+  // put times in vector
+  std::vector<TimeSeg> timesegs;
+  for(int gtii=0; gtii<int(gti.num); ++gtii)
     {
-      std::printf("%ld %ld\n", gtii, gti.num);
-
       double tstart = gti.start[gtii];
       double tstop = gti.stop[gtii];
 
@@ -113,94 +225,36 @@ void exposMode(const Pars& pars)
         throw std::runtime_error("invalid GTI found");
       int numt = int(std::ceil((tstop - tstart) / pars.deltat));
       double deltat = (tstop - tstart) / numt;
-      float deltatf = float(deltat);
 
       for(int ti=0; ti<numt; ++ti)
         {
           double t = tstart + (ti+0.5)*deltat;
+          timesegs.emplace_back(timesegs.size(), t, deltat);
+        }
+    }
+  // we process them in order of time, so reverse so we pop from back
+  std::reverse(timesegs.begin(), timesegs.end());
 
-          // attitude at time
-          auto [att_ra, att_dec, att_roll] = att.interpolate(t);
-          coordconv.updatePointing(att_ra, att_dec, att_roll);
+  // summed output image
+  Image<float> outimg(pars.xw, pars.yw, 0.f);
 
-          // get ccd coordinates of source
-          auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+  std::mutex mutex;
+  std::vector<std::thread> threads;
 
-          // skip if source is outsite allowed region
-          Point srcccd(src_ccdx, src_ccdy);
-          if( ! projmode->sourceValid(srcccd) )
-            continue;
+  // processGTIs(std::ref(timesegs), std::ref(mutex),
+  //             pars, gti, att, bp, mask, instpar,
+  //             std::ref(outimg));
 
-          Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-          auto mat = projmode->rotationMatrix(att_roll, delpt);
-          Point projorigin = projmode->origin(srcccd);
+  size_t num = timesegs.size();
+  for(unsigned i=0; i != pars.threads; ++i)
+    threads.emplace_back(processGTIs,
+                         num, std::ref(timesegs), std::ref(mutex),
+                         pars, gti, att, bp, mask, instpar,
+                         std::ref(outimg));
+  for(auto& thread : threads)
+    thread.join();
 
-          // polygons defining detector
-          PolyVec detpolys(bp.getPolyMask(t));
-          applyShiftRotationScale(detpolys, mat, projorigin-imgcen, 1/pars.pixsize);
-
-          // polygons with bad regions
-          PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
-          applyShiftRotationScale(maskedpolys, mat, projorigin-imgcen, 1/pars.pixsize);
-          auto maskedbounds = getPolysBounds(maskedpolys);
-
-          // now find pixels which overlap with detector regions
-          for(auto& detpoly : detpolys)
-            {
-              Rect detbounds( detpoly.bounds() );
-              // std::printf("%.1f %.1f %.1f %.1f\n", detbounds.tl.x, detbounds.tl.y,
-              //             detbounds.br.x, detbounds.br.y);
-
-              // box overlapping with output image
-              int minx = std::max(int(std::floor(detbounds.tl.x)), 0);
-              int maxx = std::min(int( std::ceil(detbounds.br.x)), int(pars.xw)-1)+1;
-              int miny = std::max(int(std::floor(detbounds.tl.y)), 0);
-              int maxy = std::min(int( std::ceil(detbounds.br.y)), int(pars.yw)-1)+1;
-              if( maxx <= minx || maxy <= miny )
-                continue;
-
-              // std::printf("rng %d %d %d %d\n", minx, maxx, miny, maxy);
-
-              // iterate over output pixels
-              for(int y=miny; y<maxy; ++y)
-                for(int x=minx; x<maxx; ++x)
-                  {
-                    // update pixel coordinates polygon
-                    pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
-                    pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
-                    pixp[2].x = x+0.5f; pixp[2].y = y+0.5f;
-                    pixp[3].x = x+0.5f; pixp[3].y = y-0.5f;
-
-                    // clip pixel to detector poly
-                    poly_clip(detpoly, pixp, clipped);
-
-                    // pixel overlaps with detector poly
-                    if(! clipped.empty() )
-                      {
-                        float area = clipped.area();
-                        Rect cb(clipped.bounds());
-
-                        // check whether it overlaps with any masked region
-                        // if so, subtract any overlapping area
-                        for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
-                          {
-                            if( cb.overlap(maskedbounds[mi]) )
-                              {
-                                poly_clip(clipped, maskedpolys[mi], clippedmask);
-                                if( ! clippedmask.empty() )
-                                  area -= clippedmask.area();
-                              }
-                          }
-
-                        outimg(x, y) += area * deltatf;
-                      }
-                  } // pixels
-            } // detector polygons
-
-        } // gti subdivision
-
-    } // gti
-
+  Point imgcen = pars.imageCentre();
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
   write_fits_image(pars.out_fn, outimg, imgcen.x, imgcen.y, pars.pixsize);
 }
@@ -214,7 +268,8 @@ int main()
   pars.out_fn = "test.fits";
   pars.src_ra = 57.3466206;
   pars.src_dec = -11.9909090;
-  pars.pixsize = 1;
+  pars.pixsize = 1./8.f;
+  pars.threads = 32;
   //pars.projmode = Pars::WHOLE_DET;
 
   //imageMode(pars);

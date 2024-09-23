@@ -11,6 +11,7 @@ Pars::Pars()
   src_ra(0), src_dec(0),
   pimin(300), pimax(2300),
   projmode(AVERAGE_FOV),
+  threads(1),
   xw(512), yw(512),
   pixsize(1),
   deltat(0.01)

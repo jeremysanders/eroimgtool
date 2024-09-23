@@ -38,6 +38,9 @@ public:
   // operating mode
   projmodetype projmode;
 
+  // number of threads to use
+  unsigned threads;
+
   // output image size
   unsigned xw, yw;
   // output pixel size
