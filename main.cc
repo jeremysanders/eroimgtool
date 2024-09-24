@@ -10,6 +10,7 @@
 #include "coords.hh"
 #include "image.hh"
 #include "pars.hh"
+#include "poly_fill.hh"
 
 void imageMode(const Pars& pars)
 {
@@ -104,6 +105,7 @@ void processGTIs(size_t num,
 
   // output image
   Image<float> img(pars.xw, pars.yw, 0.f);
+  Image<uint8_t> imgt(pars.xw, pars.yw, 0);
 
   // predefine polygon for pixel
   Poly pixp(4);
@@ -150,72 +152,84 @@ void processGTIs(size_t num,
       // polygons with bad regions
       PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
       applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
-      auto maskedbounds = getPolysBounds(maskedpolys);
+      //auto maskedbounds = getPolysBounds(maskedpolys);
 
-      // now find pixels which overlap with detector regions
-      for(auto& detpoly : detpolys)
-        {
-          Rect detbounds( detpoly.bounds() );
+      imgt = 0;
+      for(auto& poly: detpolys)
+        fillPoly(poly, imgt, 1);
+      for(auto& poly: maskedpolys)
+        fillPoly(poly, imgt, 0);
 
-          // box overlapping with output image
-          int minx = std::max(int(std::floor(detbounds.tl.x)), 0);
-          int maxx = std::min(int( std::ceil(detbounds.br.x)), int(pars.xw)-1)+1;
-          int miny = std::max(int(std::floor(detbounds.tl.y)), 0);
-          int maxy = std::min(int( std::ceil(detbounds.br.y)), int(pars.yw)-1)+1;
-          if( maxx <= minx || maxy <= miny )
-            continue;
 
-          // iterate over output pixels
-          for(int y=miny; y<maxy; ++y)
-            for(int x=minx; x<maxx; ++x)
-              {
-/*
-                Point pixpt(x, y);
-                if(detpoly.is_inside(pixpt))
-                  {
-                    bool inside = true;
-                    for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
-                      {
-                        if(maskedbounds[mi].inside(pixpt) && maskedpolys[mi].is_inside(pixpt))
-                          inside = false;
-                      }
-                    if(inside)
-                      img(x, y) += timeseg.dt;
-                  }
-*/
+//       // now find pixels which overlap with detector regions
+//       for(auto& detpoly : detpolys)
+//         {
+//           Rect detbounds( detpoly.bounds() );
 
-                // update pixel coordinates polygon
-                pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
-                pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
-                pixp[2].x = x+0.5f; pixp[2].y = y+0.5f;
-                pixp[3].x = x+0.5f; pixp[3].y = y-0.5f;
+//           // box overlapping with output image
+//           int minx = std::max(int(std::floor(detbounds.tl.x)), 0);
+//           int maxx = std::min(int( std::ceil(detbounds.br.x)), int(pars.xw)-1)+1;
+//           int miny = std::max(int(std::floor(detbounds.tl.y)), 0);
+//           int maxy = std::min(int( std::ceil(detbounds.br.y)), int(pars.yw)-1)+1;
+//           if( maxx <= minx || maxy <= miny )
+//             continue;
 
-                // clip pixel to detector poly
-                poly_clip(detpoly, pixp, clipped);
+//           // iterate over output pixels
+//           for(int y=miny; y<maxy; ++y)
+//             for(int x=minx; x<maxx; ++x)
+//               {
+// /*
+//                 Point pixpt(x, y);
+//                 if(detpoly.is_inside(pixpt))
+//                   {
+//                     bool inside = true;
+//                     for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
+//                       {
+//                         if(maskedbounds[mi].inside(pixpt) && maskedpolys[mi].is_inside(pixpt))
+//                           inside = false;
+//                       }
+//                     if(inside)
+//                       img(x, y) += timeseg.dt;
+//                   }
+// */
 
-                // pixel overlaps with detector poly
-                if(! clipped.empty() )
-                  {
-                    float area = clipped.area();
-                    Rect cb(clipped.bounds());
+//                 // update pixel coordinates polygon
+//                 pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
+//                 pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
+//                 pixp[2].x = x+0.5f; pixp[2].y = y+0.5f;
+//                 pixp[3].x = x+0.5f; pixp[3].y = y-0.5f;
 
-                    // check whether it overlaps with any masked region
-                    // if so, subtract any overlapping area
-                    for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
-                      {
-                        if( cb.overlap(maskedbounds[mi]) )
-                          {
-                            poly_clip(maskedpolys[mi], clipped, clippedmask);
-                            if( ! clippedmask.empty() )
-                              area -= clippedmask.area();
-                          }
-                      }
+//                 // clip pixel to detector poly
+//                 poly_clip(detpoly, pixp, clipped);
 
-                    img(x, y) += area * timeseg.dt;
-                  }
+//                 // pixel overlaps with detector poly
+//                 if(! clipped.empty() )
+//                   {
+//                     float area = clipped.area();
+//                     Rect cb(clipped.bounds());
 
-              } // pixels
-        } // detector polygons
+//                     // check whether it overlaps with any masked region
+//                     // if so, subtract any overlapping area
+//                     for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
+//                       {
+//                         if( cb.overlap(maskedbounds[mi]) )
+//                           {
+//                             poly_clip(maskedpolys[mi], clipped, clippedmask);
+//                             if( ! clippedmask.empty() )
+//                               area -= clippedmask.area();
+//                           }
+//                       }
+
+//                     img(x, y) += area * timeseg.dt;
+//                   }
+
+//               } // pixels
+//         } // detector polygons
+// */
+
+      int npix = img.xw * img.yw;
+      for(int i=0; i<npix; ++i)
+        img.arr[i] += timeseg.dt * imgt.arr[i];
 
     } // input times
 
