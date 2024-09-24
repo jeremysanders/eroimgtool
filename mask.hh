@@ -22,6 +22,8 @@ class Mask
 public:
   Mask();
   Mask(const std::string& filename);
+  void simplify();
+  void writeRegion(const std::string& filename) const;
 
   PolyVec as_ccd_poly(const CoordConv& cc) const;
 

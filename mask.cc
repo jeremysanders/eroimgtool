@@ -166,6 +166,53 @@ Mask::Mask(const std::string& filename)
   std::printf("  - converted to %ld sky coordinates\n", ct);
 }
 
+void Mask::simplify()
+{
+  for(auto& cv : maskcoords)
+    {
+      if(cv.size() < 6)
+        continue;
+
+      CoordVec out;
+      for(size_t i=0; i < cv.size(); i+=2)
+        {
+          Coord c1 = cv[i];
+          if(i == cv.size()-1)
+            out.push_back(c1);
+          else
+            {
+              Coord c2 = cv[i+1];
+              out.emplace_back(0.5*(c1.lon+c2.lon), 0.5*(c1.lat+c2.lat));
+            }
+        }
+      cv = out;
+    }
+}
+
+void Mask::writeRegion(const std::string& filename) const
+{
+  // no error checking! debugging only
+  FILE *fout = std::fopen(filename.c_str(), "w");
+  fprintf(fout, "# Region file format: DS9 version 4.1\n");
+  fprintf(fout, "fk5\n");
+
+  for(auto& cv : maskcoords)
+    {
+      fprintf(fout, "polygon(");
+      bool first = true;
+      for(auto c : cv)
+        {
+          if(!first) fprintf(fout, ",");
+          first = false;
+          fprintf(fout, "%.7f,%.7f", c.lon, c.lat);
+        }
+      fprintf(fout,")\n");
+    }
+
+  std::fclose(fout);
+}
+
+
 PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
 {
   PolyVec polys;
