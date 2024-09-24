@@ -3,13 +3,13 @@
 #include <cmath>
 #include <limits>
 
-static bool is_inside(Point p1, Point p2, Point q)
+static inline bool is_inside(Point p1, Point p2, Point q)
 {
   float R = (p2.x-p1.x)*(q.y-p1.y) - (p2.y-p1.y)*(q.x-p1.x);
   return R <= 0;
 }
 
-static Point compute_intersection(Point p1, Point p2, Point p3, Point p4)
+static inline Point compute_intersection(Point p1, Point p2, Point p3, Point p4)
 {
   float x, y;
 
@@ -66,16 +66,14 @@ void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly)
             {
               if(!is_inside(cedge1, cedge2, sedge1))
                 {
-                  Point inter = compute_intersection(sedge1, sedge2,
-                                                     cedge1, cedge2);
+                  Point inter = compute_intersection(sedge1, sedge2, cedge1, cedge2);
                   opoly.add(inter);
                 }
               opoly.add(sedge2);
             }
           else if(is_inside(cedge1, cedge2, sedge1))
             {
-              Point inter = compute_intersection(sedge1, sedge2,
-                                                 cedge1, cedge2);
+              Point inter = compute_intersection(sedge1, sedge2, cedge1, cedge2);
               opoly.add(inter);
             }
 

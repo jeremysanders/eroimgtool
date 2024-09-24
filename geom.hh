@@ -33,6 +33,10 @@ struct Rect
     return (tl.x < o.br.x) && (br.x > o.tl.x) &&
       (tl.y < o.br.y) && (br.y > o.tl.y);
   }
+  bool inside(const Point& pt) const
+  {
+    return (pt.x >= tl.x) && (pt.x <= br.x) && (pt.y >= tl.y) & (pt.y <= br.y);
+  }
 
   Point tl, br;
 };

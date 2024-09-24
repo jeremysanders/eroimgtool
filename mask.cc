@@ -178,7 +178,7 @@ PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
       for(auto& coord : cv)
         {
           auto [ccdx, ccdy] = cc.radec2ccd(coord.lon, coord.lat);
-          poly.add(Point(ccdx, ccdy));
+          poly.pts.emplace_back(ccdx, ccdy);
         }
     }
 

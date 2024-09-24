@@ -169,6 +169,21 @@ void processGTIs(size_t num,
           for(int y=miny; y<maxy; ++y)
             for(int x=minx; x<maxx; ++x)
               {
+/*
+                Point pixpt(x, y);
+                if(detpoly.is_inside(pixpt))
+                  {
+                    bool inside = true;
+                    for(size_t mi = 0; mi != maskedpolys.size(); ++mi)
+                      {
+                        if(maskedbounds[mi].inside(pixpt) && maskedpolys[mi].is_inside(pixpt))
+                          inside = false;
+                      }
+                    if(inside)
+                      img(x, y) += timeseg.dt;
+                  }
+*/
+
                 // update pixel coordinates polygon
                 pixp[0].x = x-0.5f; pixp[0].y = y-0.5f;
                 pixp[1].x = x-0.5f; pixp[1].y = y+0.5f;
@@ -190,7 +205,7 @@ void processGTIs(size_t num,
                       {
                         if( cb.overlap(maskedbounds[mi]) )
                           {
-                            poly_clip(clipped, maskedpolys[mi], clippedmask);
+                            poly_clip(maskedpolys[mi], clipped, clippedmask);
                             if( ! clippedmask.empty() )
                               area -= clippedmask.area();
                           }
@@ -198,6 +213,7 @@ void processGTIs(size_t num,
 
                     img(x, y) += area * timeseg.dt;
                   }
+
               } // pixels
         } // detector polygons
 
@@ -235,24 +251,31 @@ void exposMode(const Pars& pars)
   // we process them in order of time, so reverse so we pop from back
   std::reverse(timesegs.begin(), timesegs.end());
 
+  //timesegs.clear();
+  //timesegs.emplace_back(0, 635459963.8, 0.1);
+
   // summed output image
   Image<float> outimg(pars.xw, pars.yw, 0.f);
 
   std::mutex mutex;
-  std::vector<std::thread> threads;
-
-  // processGTIs(std::ref(timesegs), std::ref(mutex),
-  //             pars, gti, att, bp, mask, instpar,
-  //             std::ref(outimg));
 
   size_t num = timesegs.size();
-  for(unsigned i=0; i != pars.threads; ++i)
-    threads.emplace_back(processGTIs,
-                         num, std::ref(timesegs), std::ref(mutex),
-                         pars, gti, att, bp, mask, instpar,
-                         std::ref(outimg));
-  for(auto& thread : threads)
-    thread.join();
+  if(pars.threads <= 1)
+    {
+      processGTIs(num, timesegs, mutex,
+                  pars, gti, att, bp, mask, instpar, outimg);
+    }
+  else
+    {
+      std::vector<std::thread> threads;
+      for(unsigned i=0; i != pars.threads; ++i)
+        threads.emplace_back(processGTIs,
+                             num, std::ref(timesegs), std::ref(mutex),
+                             pars, gti, att, bp, mask, instpar,
+                             std::ref(outimg));
+      for(auto& thread : threads)
+        thread.join();
+    }
 
   Point imgcen = pars.imageCentre();
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
@@ -268,9 +291,15 @@ int main()
   pars.out_fn = "test.fits";
   pars.src_ra = 57.3466206;
   pars.src_dec = -11.9909090;
-  pars.pixsize = 1./8.f;
-  pars.threads = 32;
+  pars.pixsize = 1/5.f;///8.f;
+  pars.threads = 1;
+
+  pars.xw = 1024;
+  pars.yw = 1024;
+
+  //pars.deltat = 0.1;
   //pars.projmode = Pars::WHOLE_DET;
+  //pars.projmode = Pars::AVERAGE_FOV_SKY;
 
   //imageMode(pars);
   exposMode(pars);
