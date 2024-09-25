@@ -12,6 +12,83 @@
 #include "pars.hh"
 #include "poly_fill.hh"
 
+void processEvents(size_t chunk_size,
+                   std::vector<size_t>& chunks,
+                   std::mutex& mutex,
+                   const EventTable& events,
+                   Pars pars, GTITable gti, AttitudeTable att, BadPixTable bp,
+                   Mask mask, InstPar instpar,
+                   Image<int>& finalimg)
+{
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  CoordConv coordconv(instpar);
+  Point imgcen = pars.imageCentre();
+
+  // working image
+  Image<int> img(pars.xw, pars.yw, 0);
+
+  for(;;)
+    {
+      // get next time to process
+      unsigned evtidx;
+      {
+        std::lock_guard<std::mutex> lock(mutex);
+        if(chunks.empty())
+          {
+            // add our part to the total and return
+            finalimg.arr += img.arr;
+            return;
+          }
+        evtidx = chunks.back();
+        chunks.pop_back();
+      }
+
+      for(size_t i=evtidx; i!=std::min(evtidx+chunk_size, events.num_entries); ++i)
+        {
+          // skip events on bad pixels
+          if( bp.getMask(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0 )
+            continue;
+
+          Point evtpt(events.ccdx[i], events.ccdy[i]);
+
+          // get attitude at time of event
+          auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
+          coordconv.updatePointing(att_ra, att_dec, att_roll);
+
+          // ignore masked regions
+          PolyVec ccd_maskedpolys(mask.as_ccd_poly(coordconv));
+          if( is_inside(ccd_maskedpolys, evtpt) )
+            continue;
+
+          // get ccd coordinates of source
+          auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+
+          // skip if source is outsite allowed region
+          Point srcccd(src_ccdx, src_ccdy);
+          if( ! projmode->sourceValid(srcccd) )
+            continue;
+
+          // compute relative coordinates of photon
+          Point origin = projmode->origin(srcccd);
+          Point relpt = evtpt - origin;
+
+          // apply any necessary rotation for mode
+          Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
+          auto mat = projmode->rotationMatrix(att_roll, delpt);
+          relpt = mat.rotate(relpt);
+
+          // calculate coordinates in image and add to pixel
+          Point scalept = relpt/pars.pixsize + imgcen;
+          int px = int(std::round(scalept.x));
+          int py = int(std::round(scalept.y));
+          if(px>=0 && px<int(img.xw) && py>=0 && py<int(img.yw))
+            img(px, py) += 1;
+        }
+
+    } // chunks
+}
+
+
 void imageMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
@@ -20,66 +97,39 @@ void imageMode(const Pars& pars)
 
   std::printf("Building image\n");
 
-  CoordConv coordconv(instpar);
+  constexpr size_t chunk_size = 100;
+  std::vector<size_t> chunks;
+  for(size_t i=0; i < events.num_entries; i += chunk_size)
+    chunks.push_back(i);
+  std::reverse(chunks.begin(), chunks.end());
 
-  Image<int> outimg(pars.xw, pars.yw);
-  Point ptc = pars.imageCentre();
+  Image<int> sumimg(pars.xw, pars.yw, 0);
 
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  std::mutex mutex;
 
-  for(size_t i=0; i!=events.num_entries; ++i)
+  if(pars.threads <= 1)
     {
-      // skip events on bad pixels
-      if( bp.getMask(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0 )
-        continue;
-
-      Point evtpt(events.ccdx[i], events.ccdy[i]);
-
-      // get attitude at time of event
-      auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
-      coordconv.updatePointing(att_ra, att_dec, att_roll);
-
-      // ignore masked regions
-      PolyVec ccd_maskedpolys(mask.as_ccd_poly(coordconv));
-      if( is_inside(ccd_maskedpolys, evtpt) )
-        continue;
-
-      // get ccd coordinates of source
-      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
-
-      // skip if source is outsite allowed region
-      Point srcccd(src_ccdx, src_ccdy);
-      if( ! projmode->sourceValid(srcccd) )
-        continue;
-
-      // compute relative coordinates of photon
-      Point origin = projmode->origin(srcccd);
-      Point relpt = evtpt - origin;
-
-      // apply any necessary rotation for mode
-      Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto mat = projmode->rotationMatrix(att_roll, delpt);
-      relpt = mat.rotate(relpt);
-
-      // calculate coordinates in image and add to pixel
-      Point scalept = relpt/pars.pixsize + ptc;
-      int px = int(std::round(scalept.x));
-      int py = int(std::round(scalept.y));
-      if(px>=0 && px<int(outimg.xw) && py>=0 && py<int(outimg.yw))
-        outimg(px, py) += 1;
+      processEvents(chunk_size, chunks, mutex,
+                    events,
+                    pars, gti, att, bp, mask, instpar, sumimg);
+    }
+  else
+    {
+      std::vector<std::thread> threads;
+      for(unsigned i=0; i != pars.threads; ++i)
+        threads.emplace_back(processEvents,
+                             chunk_size, std::ref(chunks), std::ref(mutex),
+                             std::ref(events),
+                             pars, gti, att, bp, mask, instpar,
+                             std::ref(sumimg));
+      for(auto& thread : threads)
+        thread.join();
     }
 
-  std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, outimg, ptc.x, ptc.y, pars.pixsize);
-}
 
-static std::vector<Rect> getPolysBounds(const PolyVec& polys)
-{
-  std::vector<Rect> bounds;
-  bounds.reserve(polys.size());
-  for(auto& poly : polys)
-    bounds.emplace_back( poly.bounds() );
-  return bounds;
+  std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
+  Point imgcen = pars.imageCentre();
+  write_fits_image(pars.out_fn, sumimg, imgcen.x, imgcen.y, pars.pixsize);
 }
 
 struct TimeSeg
@@ -157,10 +207,7 @@ void processGTIs(size_t num,
 
       int npix = img.xw * img.yw;
       for(int i=0; i<npix; ++i)
-        //img.arr[i] += timeseg.dt * imgt.arr[i];
         img.arr[i] += (imgt.arr[i]==1) ? timeseg.dt : 0.;
-        //if(imgt.arr[i]) img.arr[i] += timeseg.dt;
-        //img.arr[i] += imgt.arr[i] ? timeseg.dt : 0.;
 
       //fillPoly2(detpolys, maskedpolys, img, timeseg.dt);
 
@@ -168,18 +215,12 @@ void processGTIs(size_t num,
 
 }
 
-// 1:16 - tern
-// 1:21 - mult
-// 1:27 - if
-// 1:20 - tern2
-
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
   auto [events, gti, att, bp] = pars.loadEventFile();
 
   Mask mask = pars.loadMask();
-  //mask.simplify();
   //mask.writeRegion("test.reg");
 
   std::printf("Building exposure map\n");
@@ -251,7 +292,7 @@ int main()
   pars.src_ra = 57.3466206;
   pars.src_dec = -11.9909090;
   pars.pixsize = 1/5.f;///8.f;
-  pars.threads = 4;
+  pars.threads = 8;
 
   pars.xw = 1024;
   pars.yw = 1024;
@@ -264,8 +305,8 @@ int main()
   //pars.projmode = Pars::WHOLE_DET;
   //pars.projmode = Pars::AVERAGE_FOV_SKY;
 
-  //imageMode(pars);
-  exposMode(pars);
+  imageMode(pars);
+  //exposMode(pars);
 
   return 0;
 }
