@@ -124,7 +124,7 @@ static void cleanup_opposing(std::list<Segment>& segs)
 }
 
 // convert series of segments to a polygon
-static Poly segs_to_poly(const std::list<Segment>& segs)
+static Poly segs_to_poly(const std::list<Segment>& segs, bool merge)
 {
   Poly retn;
   direction lastdir = INVALID;
@@ -136,7 +136,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
 
       // move segment starting point to destination
       Point endpt(s.endx(), s.endy());
-      if(s.dir == lastdir)
+      if(s.dir == lastdir && merge)
         // go in same direction, so we replace the last point
         retn.back() = endpt;
       else
@@ -149,7 +149,7 @@ static Poly segs_to_poly(const std::list<Segment>& segs)
   return retn;
 }
 
-PolyVec mask_to_polygons(const Image<int>& inmask, bool invert)
+PolyVec mask_to_polygons(const Image<int>& inmask, bool invert, bool merge)
 {
   const int xw = inmask.xw;
   const int yw = inmask.yw;
@@ -319,7 +319,7 @@ PolyVec mask_to_polygons(const Image<int>& inmask, bool invert)
       cleanup_opposing(segs);
 
       // create new polygon and add to list
-      polys.emplace_back( segs_to_poly(segs) );
+      polys.emplace_back( segs_to_poly(segs, merge) );
 
       segs.clear();
     }

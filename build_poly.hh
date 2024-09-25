@@ -3,6 +3,8 @@
 
 #include "image.hh"
 
-PolyVec mask_to_polygons(const Image<int>& img, bool invert=false);
+// invert: find 0 regions in map, not 1
+// merge: join redundant line segments in same direction
+PolyVec mask_to_polygons(const Image<int>& img, bool invert=false, bool merge=true);
 
 #endif

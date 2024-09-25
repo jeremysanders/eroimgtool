@@ -95,7 +95,7 @@ Mask::Mask()
 {
 }
 
-Mask::Mask(const std::string& filename)
+Mask::Mask(const std::string& filename, bool simplify)
 {
   int status = 0;
   fitsfile *ff;
@@ -128,12 +128,8 @@ Mask::Mask(const std::string& filename)
   fits_close_file(ff, &status);
   check_fitsio_status(status);
 
-  PolyVec polys = mask_to_polygons(maskimg, true);
+  PolyVec polys = mask_to_polygons(maskimg, true, !simplify);
   std::printf("  - found %ld polygons\n", polys.size());
-
-  // FILE *fout = std::fopen("test.reg", "w");
-  // fprintf(fout, "# Region file format: DS9 version 4.1\n");
-  // fprintf(fout, "fk5\n");
 
   size_t ct = 0;
   for(auto &poly : polys)
@@ -146,27 +142,28 @@ Mask::Mask(const std::string& filename)
       CoordVec skyvec = wcs.pix2sky(pixvec);
       if(skyvec.size() != 0)
         {
-          // fprintf(fout, "polygon(");
-          // bool first = true;
-          // for(auto c : skyvec)
-          //   {
-          //     if(!first) fprintf(fout, ",");
-          //     first = false;
-          //     fprintf(fout, "%.7f,%.7f", c.lon, c.lat);
-          //   }
-          // fprintf(fout,")\n");
-
           ct += skyvec.size();
           maskcoords.push_back(skyvec);
         }
     }
 
-  // std::fclose(fout);
-
   std::printf("  - converted to %ld sky coordinates\n", ct);
+
+
+  if(simplify)
+    {
+      simplifyPolys();
+
+      ct = 0;
+      for(auto &coords : maskcoords)
+        ct += coords.size();
+
+      std::printf("  - simplified to %ld coordinates\n", ct);
+    }
+
 }
 
-void Mask::simplify()
+void Mask::simplifyPolys()
 {
   for(auto& cv : maskcoords)
     {
