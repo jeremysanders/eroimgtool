@@ -89,7 +89,7 @@ struct TimeSeg
 
   size_t idx;
   double t;
-  float dt;
+  double dt;
 };
 
 void processGTIs(size_t num,
@@ -97,20 +97,16 @@ void processGTIs(size_t num,
                  std::mutex& mutex,
                  Pars pars, GTITable gti, AttitudeTable att, BadPixTable bp,
                  Mask mask, InstPar instpar,
-                 Image<float>& finalimg)
+                 Image<double>& finalimg)
 {
   std::unique_ptr<ProjMode> projmode(pars.createProjMode());
   CoordConv coordconv(instpar);
   Point imgcen = pars.imageCentre();
 
   // output image
-  Image<float> img(pars.xw, pars.yw, 0.f);
+  Image<double> img(pars.xw, pars.yw, 0.f);
+  // masked image during time step
   Image<uint8_t> imgt(pars.xw, pars.yw, 0);
-
-  // predefine polygon for pixel
-  Poly pixp(4);
-  // these contain the clipped pixels, with detector, and with mask
-  Poly clipped, clippedmask;
 
   for(;;)
     {
@@ -152,7 +148,6 @@ void processGTIs(size_t num,
       // polygons with bad regions
       PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
       applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
-      //auto maskedbounds = getPolysBounds(maskedpolys);
 
       imgt = 0;
       for(auto& poly: detpolys)
@@ -162,13 +157,21 @@ void processGTIs(size_t num,
 
       int npix = img.xw * img.yw;
       for(int i=0; i<npix; ++i)
-        img.arr[i] += timeseg.dt * imgt.arr[i];
+        //img.arr[i] += timeseg.dt * imgt.arr[i];
+        img.arr[i] += (imgt.arr[i]==1) ? timeseg.dt : 0.;
+        //if(imgt.arr[i]) img.arr[i] += timeseg.dt;
+        //img.arr[i] += imgt.arr[i] ? timeseg.dt : 0.;
 
       //fillPoly2(detpolys, maskedpolys, img, timeseg.dt);
 
     } // input times
 
 }
+
+// 1:16 - tern
+// 1:21 - mult
+// 1:27 - if
+// 1:20 - tern2
 
 void exposMode(const Pars& pars)
 {
@@ -206,7 +209,7 @@ void exposMode(const Pars& pars)
   //timesegs.emplace_back(0, 635459963.8, 0.1);
 
   // summed output image
-  Image<float> outimg(pars.xw, pars.yw, 0.f);
+  Image<double> sumimg(pars.xw, pars.yw, 0.f);
 
   std::mutex mutex;
 
@@ -214,7 +217,7 @@ void exposMode(const Pars& pars)
   if(pars.threads <= 1)
     {
       processGTIs(num, timesegs, mutex,
-                  pars, gti, att, bp, mask, instpar, outimg);
+                  pars, gti, att, bp, mask, instpar, sumimg);
     }
   else
     {
@@ -223,14 +226,19 @@ void exposMode(const Pars& pars)
         threads.emplace_back(processGTIs,
                              num, std::ref(timesegs), std::ref(mutex),
                              pars, gti, att, bp, mask, instpar,
-                             std::ref(outimg));
+                             std::ref(sumimg));
       for(auto& thread : threads)
         thread.join();
     }
 
+  Image<float> writeimg(pars.xw, pars.yw);
+  for(unsigned y=0; y<pars.yw; ++y)
+    for(unsigned x=0; x<pars.xw; ++x)
+      writeimg(x,y) = float(sumimg(x,y));
+
   Point imgcen = pars.imageCentre();
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, outimg, imgcen.x, imgcen.y, pars.pixsize);
+  write_fits_image(pars.out_fn, writeimg, imgcen.x, imgcen.y, pars.pixsize);
 }
 
 int main()
@@ -243,10 +251,14 @@ int main()
   pars.src_ra = 57.3466206;
   pars.src_dec = -11.9909090;
   pars.pixsize = 1/5.f;///8.f;
-  pars.threads = 1;
+  pars.threads = 4;
 
   pars.xw = 1024;
   pars.yw = 1024;
+
+  // pars.xw *= 4;
+  // pars.yw *= 4;
+  // pars.pixsize /= 4;
 
   //pars.deltat = 0.1;
   //pars.projmode = Pars::WHOLE_DET;
