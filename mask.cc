@@ -97,6 +97,12 @@ Mask::Mask()
 
 Mask::Mask(const std::string& filename, bool simplify)
 {
+  if(filename.empty())
+    {
+      // ignore any empty mask
+      return;
+    }
+
   int status = 0;
   fitsfile *ff;
 

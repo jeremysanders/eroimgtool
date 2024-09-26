@@ -6,7 +6,7 @@
 
 class GTITable
 {
-  public:
+public:
   GTITable(fitsfile *ff, int tm);
 
   size_t num;

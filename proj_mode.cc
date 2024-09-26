@@ -1,4 +1,6 @@
 #include <cmath>
+#include <cstdio>
+
 #include "common.hh"
 #include "proj_mode.hh"
 
@@ -22,6 +24,12 @@ bool ProjModeAverageFoV::sourceValid(Point ccdpt) const
   return rad2 < sqr(192);
 }
 
+void ProjModeAverageFoV::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - fov: source-relative detector coordinates for std FoV\n");
+}
+
 ////////////////////////////////////////////////////////////////////
 
 bool ProjModeAverageFoVSky::sourceValid(Point ccdpt) const
@@ -40,7 +48,11 @@ RotationMatrix ProjModeAverageFoVSky::rotationMatrix(double roll,
   return RotationMatrix(c, -s, s, c);
 }
 
-
+void ProjModeAverageFoVSky::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - fov_sky: source-relative sky-rotated detector coordinates for std FoV\n");
+}
 
 ////////////////////////////////////////////////////////////////////
 
@@ -53,4 +65,10 @@ Point ProjModeDet::origin(Point ccdpt) const
 bool ProjModeDet::sourceValid(Point ccdpt) const
 {
   return true;
+}
+
+void ProjModeDet::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - det: non-relative detector coordinates\n");
 }

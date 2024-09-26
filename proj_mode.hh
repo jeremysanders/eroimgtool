@@ -14,6 +14,9 @@ public:
 
   // origin to use given source
   virtual Point origin(Point ccdpt) const;
+
+  // show message to user
+  virtual void message() const = 0;
 };
 
 // average field of view, in CCD coordinates
@@ -21,6 +24,7 @@ class ProjModeAverageFoV : public ProjMode
 {
 public:
   bool sourceValid(Point ccdpt) const;
+  void message() const;
 };
 
 // average FoV, in sky-relative coordinates
@@ -29,6 +33,7 @@ class ProjModeAverageFoVSky : public ProjMode
 public:
   bool sourceValid(Point ccdpt) const;
   RotationMatrix rotationMatrix(double roll, Point delccd) const;
+  void message() const;
 };
 
 // mode for testing - just Det coordinates without tracking source
@@ -37,6 +42,7 @@ class ProjModeDet : public ProjMode
 public:
   bool sourceValid(Point ccdpt) const;
   Point origin(Point ccdpt) const;
+  void message() const;
 };
 
 

@@ -6,7 +6,7 @@
 
 class DeadCorTable
 {
-  public:
+public:
   DeadCorTable(fitsfile *ff, int tm);
 
   float interpolate(double t);

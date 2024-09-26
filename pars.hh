@@ -3,6 +3,7 @@
 
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "attitude.hh"
 #include "badpix.hh"
@@ -39,6 +40,9 @@ public:
 
   // operating mode
   projmodetype projmode;
+
+  // arguments to projection mode
+  std::vector<float> projargs;
 
   // number of threads to use
   unsigned threads;

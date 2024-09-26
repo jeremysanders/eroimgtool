@@ -96,6 +96,9 @@ void imageMode(const Pars& pars)
   auto [events, gti, att, bp, deadc] = pars.loadEventFile();
   Mask mask = pars.loadMask();
 
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  projmode->message();
+
   std::printf("Building image\n");
 
   constexpr size_t chunk_size = 400;
