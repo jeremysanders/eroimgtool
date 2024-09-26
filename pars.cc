@@ -28,11 +28,13 @@ Pars::loadEventFile() const
   fits_open_file(&ff, evt_fn.c_str(), READONLY, &status);
   check_fitsio_status(status);
 
+  GTITable gti(ff, tm);
+
   EventTable events(ff);
   events.filter_tm(tm);
   events.filter_pi(pimin, pimax);
+  events.filter_gti(gti);
 
-  GTITable gti(ff, tm);
   AttitudeTable att(ff, tm);
   BadPixTable badpix(ff, tm);
   DeadCorTable deadc(ff, tm);

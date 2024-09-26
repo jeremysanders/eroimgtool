@@ -92,6 +92,27 @@ void EventTable::filter_pi(float pimin, float pimax)
               pimin, pimax, num_entries);
 }
 
+void EventTable::filter_gti(const GTITable& gti)
+{
+  // assumes events are time ordered
+  std::vector<size_t> idxs;
+  size_t gtii = 0;
+  for(size_t i=0; i != rawx.size(); ++i)
+    {
+      double t = time[i];
+      while(gtii<gti.num && t>gti.stop[gtii])
+        ++gtii;
+      if(gtii == gti.num)
+        break;
+      if(t >= gti.start[gtii])
+        idxs.push_back(i);
+    }
+
+  do_filter(idxs);
+  std::printf("    - filtered GTIs, giving %ld entries\n",
+              num_entries);
+}
+
 // filter all columns to have indices given
 void EventTable::do_filter(const std::vector<size_t>& sel)
 {
