@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -O3 -std=c++17 -Wall -g -I${HEADAS}/include -DNDEBUG
+CXXFLAGS = -O3 -std=c++17 -Wall -g -Iexternal -I${HEADAS}/include -DNDEBUG
 LDFLAGS = -L${HEADAS}/lib -lcfitsio -lwcs -lpthread
 
 # Output program
