@@ -25,7 +25,8 @@ struct TimeSeg
 static void processGTIs(size_t num,
                         std::vector<TimeSeg>& times,
                         std::mutex& mutex,
-                        Pars pars, GTITable gti, AttitudeTable att, BadPixTable bp,
+                        Pars pars, GTITable gti, AttitudeTable att,
+                        BadPixTable bp,
                         Mask mask, InstPar instpar,
                         Image<double>& finalimg)
 {
@@ -98,7 +99,7 @@ static void processGTIs(size_t num,
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
-  auto [events, gti, att, bp] = pars.loadEventFile();
+  auto [events, gti, att, bp, deadc] = pars.loadEventFile();
 
   Mask mask = pars.loadMask();
   //mask.writeRegion("test.reg");
@@ -120,7 +121,8 @@ void exposMode(const Pars& pars)
       for(int ti=0; ti<numt; ++ti)
         {
           double t = tstart + (ti+0.5)*deltat;
-          timesegs.emplace_back(timesegs.size(), t, deltat);
+          float deadcf = deadc.interpolate(t);
+          timesegs.emplace_back(timesegs.size(), t, deltat*deadcf);
         }
     }
   // we process them in order of time, so reverse so we pop from back
@@ -138,7 +140,8 @@ void exposMode(const Pars& pars)
   if(pars.threads <= 1)
     {
       processGTIs(num, timesegs, mutex,
-                  pars, gti, att, bp, mask, instpar, sumimg);
+                  pars, gti, att, bp,
+                  mask, instpar, sumimg);
     }
   else
     {

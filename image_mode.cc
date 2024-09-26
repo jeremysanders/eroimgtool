@@ -93,7 +93,7 @@ static void processEvents(size_t chunk_size,
 void imageMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
-  auto [events, gti, att, bp] = pars.loadEventFile();
+  auto [events, gti, att, bp, deadc] = pars.loadEventFile();
   Mask mask = pars.loadMask();
 
   std::printf("Building image\n");

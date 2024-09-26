@@ -1,7 +1,7 @@
 # Compiler settings
 CXX = g++
 CXXFLAGS = -O3 -std=c++17 -Wall -g -I${HEADAS}/include -DNDEBUG
-LDFLAGS = -L${HEADAS}/lib -lcfitsio -lwcs-7.3.1 -lpthread
+LDFLAGS = -L${HEADAS}/lib -lcfitsio -lwcs -lpthread
 
 # Output program
 BIN = eroimgtool
@@ -11,7 +11,7 @@ BUILD_DIR = ./build
 # List of all C++ sources
 SRC = attitude.cc badpix.cc common.cc geom.cc gti.cc main.cc coords.cc \
 	image.cc build_poly.cc events.cc instpar.cc mask.cc proj_mode.cc \
-	pars.cc poly_fill.cc image_mode.cc expos_mode.cc
+	pars.cc poly_fill.cc deadcor.cc image_mode.cc expos_mode.cc
 
 # All .o files go to build dir.
 OBJ = $(SRC:%.cc=$(BUILD_DIR)/%.o)
