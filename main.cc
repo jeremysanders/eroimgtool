@@ -24,7 +24,9 @@ int main(int argc, char** argv)
   std::map<std::string, Pars::projmodetype> projmodemap{
     {"fov", Pars::AVERAGE_FOV},
     {"fov_sky", Pars::AVERAGE_FOV_SKY},
-    {"det", Pars::WHOLE_DET}};
+    {"det", Pars::WHOLE_DET},
+    {"radial", Pars::RADIAL},
+  };
 
   CLI::App app{"Make eROSITA unvignetted detector exposure maps"};
   argv = app.ensure_utf8(argv);
@@ -54,6 +56,8 @@ int main(int argc, char** argv)
   app.add_option("--pi-max", pars.pimax, "Maximum PI value (image mode)")
     ->capture_default_str();
   app.add_option("--delta-t", pars.deltat, "Time step (s)")
+    ->capture_default_str();
+  app.add_option("--mask-src-rad", pars.masksrcrad, "Source mask radius (pix)")
     ->capture_default_str();
   app.add_option("--threads", pars.threads, "Number of threads")
     ->capture_default_str();
@@ -91,8 +95,15 @@ int main(int argc, char** argv)
   //pars.projmode = Pars::WHOLE_DET;
   //pars.projmode = Pars::AVERAGE_FOV_SKY;
 
-  imageMode(pars);
-  //exposMode(pars);
+  switch(mode)
+    {
+    case IMAGE:
+      imageMode(pars);
+      break;
+    case EXPOS:
+      exposMode(pars);
+      break;
+    }
 
   return 0;
 }

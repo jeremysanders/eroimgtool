@@ -92,10 +92,12 @@ namespace
 } // namespace
 
 Mask::Mask()
+  : src_ra(0), src_dec(0), src_rad(0)
 {
 }
 
 Mask::Mask(const std::string& filename, bool simplify)
+  : src_ra(0), src_dec(0), src_rad(0)
 {
   if(filename.empty())
     {
@@ -169,6 +171,14 @@ Mask::Mask(const std::string& filename, bool simplify)
 
 }
 
+void Mask::setSrcMask(double ra, double dec, float rad)
+{
+  std::printf("  - masking source to radius %g pix\n", rad);
+  src_ra = ra;
+  src_dec = dec;
+  src_rad = rad;
+}
+
 void Mask::simplifyPolys()
 {
   for(auto& cv : maskcoords)
@@ -229,6 +239,22 @@ PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
         {
           auto [ccdx, ccdy] = cc.radec2ccd(coord.lon, coord.lat);
           poly.pts.emplace_back(ccdx, ccdy);
+        }
+    }
+
+  // add mask for the central source, if requested
+  if(src_rad > 0)
+    {
+      const int npts = 64; // number of points in "circular" polygon
+      auto [ccdx, ccdy] = cc.radec2ccd(src_ra, src_dec);
+      polys.emplace_back();
+      Poly& poly = polys.back();
+      poly.pts.reserve(npts);
+      for(int i=0; i<npts; ++i)
+        {
+          float theta = (2*PI/npts) * i;
+          poly.add(Point(ccdx + src_rad*std::cos(theta),
+                         ccdy + src_rad*std::sin(theta)));
         }
     }
 

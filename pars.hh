@@ -28,7 +28,7 @@ public:
   Point imageCentre() const;
 
 public:
-  enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY, WHOLE_DET};
+  enum projmodetype {AVERAGE_FOV, AVERAGE_FOV_SKY, WHOLE_DET, RADIAL};
 
 public:
   // TM to process
@@ -54,6 +54,9 @@ public:
 
   // time delta for exposure map
   double deltat;
+
+  // additionally mask source out to this radius (pixels)
+  float masksrcrad;
 
   // filenames
   std::string evt_fn;

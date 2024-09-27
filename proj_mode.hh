@@ -45,5 +45,15 @@ public:
   void message() const;
 };
 
+// radial region
+class ProjModeRadial : public ProjMode
+{
+public:
+  ProjModeRadial(const std::vector<float>& args);
+  bool sourceValid(Point ccdpt) const;
+  void message() const;
+
+  float rin, rout;
+};
 
 #endif

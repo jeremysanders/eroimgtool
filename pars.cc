@@ -14,7 +14,8 @@ Pars::Pars()
   threads(1),
   xw(512), yw(512),
   pixsize(1),
-  deltat(0.01)
+  deltat(0.01),
+  masksrcrad(0)
 {
 }
 
@@ -52,7 +53,10 @@ InstPar Pars::loadInstPar() const
 
 Mask Pars::loadMask() const
 {
-  return Mask(mask_fn);
+  Mask mask(mask_fn);
+  if(masksrcrad>0)
+    mask.setSrcMask(src_ra, src_dec, masksrcrad);
+  return mask;
 }
 
 ProjMode* Pars::createProjMode() const
@@ -65,6 +69,8 @@ ProjMode* Pars::createProjMode() const
       return new ProjModeAverageFoVSky();
     case WHOLE_DET:
       return new ProjModeDet();
+    case RADIAL:
+      return new ProjModeRadial(projargs);
     default:
       throw std::runtime_error("Invalid mode");
     }

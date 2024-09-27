@@ -1,8 +1,11 @@
 #include <cmath>
 #include <cstdio>
+#include <stdexcept>
 
 #include "common.hh"
 #include "proj_mode.hh"
+
+// FIXME: assumption centre of coords is 192,192
 
 RotationMatrix ProjMode::rotationMatrix(double roll, Point delccd) const
 {
@@ -71,4 +74,28 @@ void ProjModeDet::message() const
 {
   std::printf("Projection mode\n");
   std::printf("  - det: non-relative detector coordinates\n");
+}
+
+////////////////////////////////////////////////////////////////////
+
+ProjModeRadial::ProjModeRadial(const std::vector<float>& args)
+{
+  if(args.size() != 2)
+    throw std::runtime_error("Two parameters are required for radial projection (rin,rout)");
+
+  rin = args[0];
+  rout = args[1];
+}
+
+bool ProjModeRadial::sourceValid(Point ccdpt) const
+{
+  float rad = std::sqrt(sqr(ccdpt.x-192) + sqr(ccdpt.y-192));
+  return (rad >= rin) && (rad < rout);
+}
+
+void ProjModeRadial::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - radial: radial range of detector (%g to %g pix)\n",
+              rin, rout);
 }

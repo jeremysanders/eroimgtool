@@ -22,6 +22,7 @@ class Mask
 public:
   Mask();
   Mask(const std::string& filename, bool simplify=false);
+  void setSrcMask(double ra, double dec, float rad);
   void simplifyPolys();
   void writeRegion(const std::string& filename) const;
 
@@ -29,6 +30,8 @@ public:
 
 private:
   CoordVecVec maskcoords;
+  double src_ra, src_dec;
+  float src_rad;
 };
 
 #endif
