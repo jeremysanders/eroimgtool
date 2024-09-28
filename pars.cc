@@ -73,22 +73,22 @@ Mask Pars::loadMask() const
   return mask;
 }
 
-ProjMode* Pars::createProjMode() const
+std::unique_ptr<ProjMode> Pars::createProjMode() const
 {
   switch(projmode)
     {
     case AVERAGE_FOV:
-      return new ProjModeAverageFoV();
+      return std::make_unique<ProjModeAverageFoV>();
     case AVERAGE_FOV_SKY:
-      return new ProjModeAverageFoVSky();
+      return std::make_unique<ProjModeAverageFoVSky>();
     case WHOLE_DET:
-      return new ProjModeDet();
+      return std::make_unique<ProjModeDet>();
     case RADIAL:
-      return new ProjModeRadial(projargs);
+      return std::make_unique<ProjModeRadial>(projargs);
     case RADIAL_SYM:
-      return new ProjModeRadialSym(projargs);
+      return std::make_unique<ProjModeRadialSym>(projargs);
     case BOX:
-      return new ProjModeBox(projargs);
+      return std::make_unique<ProjModeBox>(projargs);
     default:
       throw std::runtime_error("Invalid mode");
     }

@@ -1,6 +1,7 @@
 #ifndef PARS_HH
 #define PARS_HH
 
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -24,7 +25,7 @@ public:
              DeadCorTable> loadEventFile() const;
   InstPar loadInstPar() const;
   Mask loadMask() const;
-  ProjMode* createProjMode() const;
+  std::unique_ptr<ProjMode> createProjMode() const;
   Point imageCentre() const;
 
 public:
