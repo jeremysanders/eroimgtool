@@ -99,3 +99,21 @@ void ProjModeRadial::message() const
   std::printf("  - radial: radial range of detector (%g to %g pix)\n",
               rin, rout);
 }
+
+////////////////////////////////////////////////////////////////////
+
+void ProjModeRadialSym::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - radial symmetric: radial range of detector (%g to %g pix)\n",
+              rin, rout);
+}
+
+RotationMatrix ProjModeRadialSym::rotationMatrix(double roll,
+                                                 Point delccd) const
+{
+  float theta = -std::atan2(delccd.y, delccd.x);
+  float c = std::cos(theta);
+  float s = std::sin(theta);
+  return RotationMatrix(c, -s, s, c);
+}

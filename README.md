@@ -21,7 +21,6 @@ image in sky coordinates to remove nearby sources.
 
 ## Current parameters
 
-
     Make eROSITA unvignetted detector exposure maps
     Usage: build/eroimgtool [OPTIONS] mode event image
 
@@ -33,7 +32,7 @@ image in sky coordinates to remove nearby sources.
 
     Options:
       -h,--help                   Print this help message and exit
-      --proj ENUM:value in {det->2,fov->0,fov_sky->1} OR {2,0,1} [0]
+      --proj ENUM:value in {det->2,fov->0,fov_sky->1,radial->3,radial_sym->4} OR {2,0,1,3,4} [0]
                                   Projection mode
       --proj-args FLOAT ...       List of arguments for projection
       --tm INT:INT in [1 - 7] [1]
@@ -47,4 +46,25 @@ image in sky coordinates to remove nearby sources.
       --pi-min FLOAT [300]        Minimum PI value (image mode)
       --pi-max FLOAT [2300]       Maximum PI value (image mode)
       --delta-t FLOAT [0.01]      Time step (s)
+      --mask-src-rad FLOAT [0]    Source mask radius (pix)
       --threads UINT [1]          Number of threads
+
+## Projection modes
+
+  * `fov`: Average PSF within the standard circular mask, in detector coordinates. The source is located at the centre of the image.
+  * `fov_sky`: Average PSF within the standard circular mask, rotated into sky coordinates. The source is located at the centre of the image.
+  * `det`: Detector coordinates, with the image centred on the centre of the detector.
+  * `radial`: Average PSF within the radial range (Rin<=r<Rout) given by `--proj-args`.
+  * `radial_sym`: Average PSF within the radial range (Rin<=r<Rout) given by `--proj-args`, rotated by angle of the source on the detector, to make a symmetric PSF for a radial region.
+
+## Example command line
+
+    eroimgtool --tm=2 \
+      --ra=255.7054905 --dec=-48.7900230 \
+      --pixsize=0.25 \
+      --mask=em01_258138_020_ML00001_004_c946/030_mask_final.fits.gz \
+      --threads=4 \
+      --proj=radial_sym --proj-args 90 180 \
+      image \
+      em01_258138_020_ML00001_004_c946/evt.fits.gz \
+      image_out.fits

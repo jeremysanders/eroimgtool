@@ -56,4 +56,12 @@ public:
   float rin, rout;
 };
 
+class ProjModeRadialSym : public ProjModeRadial
+{
+public:
+  ProjModeRadialSym(const std::vector<float>& args) : ProjModeRadial(args) {}
+  RotationMatrix rotationMatrix(double roll, Point delccd) const;
+  void message() const;
+};
+
 #endif

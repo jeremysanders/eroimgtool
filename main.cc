@@ -21,11 +21,13 @@ int main(int argc, char** argv)
   std::map<std::string, Mode> modemap{{"image", IMAGE}, {"expos", EXPOS}};
   Mode mode;
 
+  // map projection mode names to enum values
   std::map<std::string, Pars::projmodetype> projmodemap{
     {"fov", Pars::AVERAGE_FOV},
     {"fov_sky", Pars::AVERAGE_FOV_SKY},
     {"det", Pars::WHOLE_DET},
     {"radial", Pars::RADIAL},
+    {"radial_sym", Pars::RADIAL_SYM},
   };
 
   CLI::App app{"Make eROSITA unvignetted detector exposure maps"};
@@ -73,36 +75,22 @@ int main(int argc, char** argv)
 
   CLI11_PARSE(app, argc, argv);
 
-  // pars.tm = 3;
-  // pars.evt_fn = "em01_258138_020_ML00001_004_c946/evt.fits.gz";
-  // pars.mask_fn = "em01_258138_020_ML00001_004_c946/030_mask_final.fits.gz";
-  // pars.out_fn = "test.fits";
-  // pars.src_ra = 57.3466206;
-  // pars.src_dec = -11.9909090;
-  // pars.pixsize = 1/8.f;
-  // pars.threads = 4;
-  // pars.src_ra = 255.7054905; //57.3466206;
-  // pars.src_dec = -48.7900230; //-11.9909090;
-
-  // pars.xw = 1024;
-  // pars.yw = 1024;
-
-  // pars.xw *= 4;
-  // pars.yw *= 4;
-  // pars.pixsize /= 4;
-
-  //pars.deltat = 0.1;
-  //pars.projmode = Pars::WHOLE_DET;
-  //pars.projmode = Pars::AVERAGE_FOV_SKY;
-
-  switch(mode)
+  try
     {
-    case IMAGE:
-      imageMode(pars);
-      break;
-    case EXPOS:
-      exposMode(pars);
-      break;
+      switch(mode)
+        {
+        case IMAGE:
+          imageMode(pars);
+          break;
+        case EXPOS:
+          exposMode(pars);
+          break;
+        }
+    }
+  catch(std::runtime_error& e)
+    {
+      std::fprintf(stderr, "\nError: %s\n", e.what());
+      return 1;
     }
 
   return 0;

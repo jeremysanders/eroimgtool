@@ -104,6 +104,9 @@ void exposMode(const Pars& pars)
   Mask mask = pars.loadMask();
   //mask.writeRegion("test.reg");
 
+  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  projmode->message();
+
   std::printf("Building exposure map\n");
 
   // put times in vector
