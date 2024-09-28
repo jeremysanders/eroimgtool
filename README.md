@@ -41,6 +41,7 @@ image in sky coordinates to remove nearby sources.
       --dec FLOAT REQUIRED        Dec of source (deg)
       --pixsize FLOAT [1]         Pixel size (detector pixels)
       --mask TEXT:FILE            Input mask filename
+      --gti TEXT:FILE             Additional GTI file to merge
       --xw UINT [512]             X output image size
       --yw UINT [512]             Y output image size
       --pi-min FLOAT [300]        Minimum PI value (image mode)

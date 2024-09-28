@@ -43,6 +43,20 @@ Pars::loadEventFile() const
   fits_close_file(ff, &status);
   check_fitsio_status(status);
 
+  if(!gti_fn.empty())
+    {
+      std::printf("Opening GTI file %s\n", gti_fn.c_str());
+      fits_open_file(&ff, gti_fn.c_str(), READONLY, &status);
+      check_fitsio_status(status);
+      GTITable gti2(ff, tm);
+      fits_close_file(ff, &status);
+      check_fitsio_status(status);
+
+      gti &= gti2;
+      std::printf("  - merged GTIs to make %ld elements\n", gti.num);
+      events.filter_gti(gti);
+    }
+
   return std::make_tuple(events, gti, att, badpix, deadc);
 }
 

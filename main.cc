@@ -50,6 +50,8 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--mask", pars.mask_fn, "Input mask filename")
     ->check(CLI::ExistingFile);
+  app.add_option("--gti", pars.gti_fn, "Additional GTI file to merge")
+    ->check(CLI::ExistingFile);
   app.add_option("--xw", pars.xw, "X output image size")
     ->capture_default_str();
   app.add_option("--yw", pars.yw, "Y output image size")

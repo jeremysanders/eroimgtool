@@ -66,6 +66,7 @@ public:
   std::string evt_fn;
   std::string mask_fn;
   std::string out_fn;
+  std::string gti_fn;
 };
 
 #endif
