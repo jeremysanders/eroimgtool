@@ -1,7 +1,7 @@
 # eROImageTool
 
-This is a tool to construct image and non-vignetted exposure maps from
-eROSITA event files for calibration purposes, such as PSF
+This is a tool to construct images and non-vignetted exposure maps
+from eROSITA event files for calibration purposes, such as PSF
 modelling. The output image is by default in relative detector
 coordinates around a source position. The user can specify a mask
 image in sky coordinates to remove nearby sources.
@@ -21,7 +21,7 @@ image in sky coordinates to remove nearby sources.
 
 ## Current parameters
 
-    Make eROSITA unvignetted detector exposure maps
+    Make eROSITA unvignetted detector exposure maps and images
     Usage: build/eroimgtool [OPTIONS] mode event image
 
     Positionals:

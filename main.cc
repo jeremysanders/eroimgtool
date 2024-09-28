@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     {"box", Pars::BOX},
   };
 
-  CLI::App app{"Make eROSITA unvignetted detector exposure maps"};
+  CLI::App app{"Make eROSITA unvignetted detector exposure maps and images"};
   argv = app.ensure_utf8(argv);
 
   Pars pars;
