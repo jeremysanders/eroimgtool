@@ -1,8 +1,6 @@
 #include <cmath>
 #include <cstdio>
-#include <memory>
 #include <mutex>
-#include <stdexcept>
 #include <thread>
 
 #include "image_mode.hh"
@@ -21,7 +19,7 @@ static void processEvents(size_t chunk_size,
                           Mask mask, InstPar instpar,
                           Image<int>& finalimg)
 {
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  auto projmode = pars.createProjMode();
   CoordConv coordconv(instpar);
   Point imgcen = pars.imageCentre();
 
@@ -96,8 +94,7 @@ void imageMode(const Pars& pars)
   auto [events, gti, att, bp, deadc] = pars.loadEventFile();
   Mask mask = pars.loadMask();
 
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
-  projmode->message();
+  pars.createProjMode()->message();
 
   std::printf("Building image\n");
 

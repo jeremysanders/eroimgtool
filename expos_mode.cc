@@ -1,6 +1,5 @@
 #include <cmath>
 #include <cstdio>
-#include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
@@ -30,7 +29,7 @@ static void processGTIs(size_t num,
                         Mask mask, InstPar instpar,
                         Image<double>& finalimg)
 {
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
+  auto projmode = pars.createProjMode();
   CoordConv coordconv(instpar);
   Point imgcen = pars.imageCentre();
 
@@ -102,10 +101,8 @@ void exposMode(const Pars& pars)
   auto [events, gti, att, bp, deadc] = pars.loadEventFile();
 
   Mask mask = pars.loadMask();
-  //mask.writeRegion("test.reg");
 
-  std::unique_ptr<ProjMode> projmode(pars.createProjMode());
-  projmode->message();
+  pars.createProjMode()->message();
 
   std::printf("Building exposure map\n");
 
