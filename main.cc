@@ -28,6 +28,7 @@ int main(int argc, char** argv)
     {"det", Pars::WHOLE_DET},
     {"radial", Pars::RADIAL},
     {"radial_sym", Pars::RADIAL_SYM},
+    {"box", Pars::BOX},
   };
 
   CLI::App app{"Make eROSITA unvignetted detector exposure maps"};

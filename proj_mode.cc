@@ -113,7 +113,33 @@ RotationMatrix ProjModeRadialSym::rotationMatrix(double roll,
                                                  Point delccd) const
 {
   float theta = -std::atan2(delccd.y, delccd.x);
-  float c = std::cos(theta);
   float s = std::sin(theta);
+  float c = std::cos(theta);
   return RotationMatrix(c, -s, s, c);
+}
+
+////////////////////////////////////////////////////////////////////
+
+ProjModeBox::ProjModeBox(const std::vector<float>& args)
+{
+  if(args.size() != 4)
+    throw std::runtime_error("Four parameters are required for box (x1,y1,x2,y2)");
+
+  x1 = args[0];
+  y1 = args[1];
+  x2 = args[2];
+  y2 = args[3];
+}
+
+bool ProjModeBox::sourceValid(Point ccdpt) const
+{
+  return (ccdpt.x >= x1 && ccdpt.y >= y1 &&
+          ccdpt.x <  x2 && ccdpt.y <  y2);
+}
+
+void ProjModeBox::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - box: range (x=%g:%g,y=%g:%g pix)\n",
+              x1, x2, y1, y2);
 }

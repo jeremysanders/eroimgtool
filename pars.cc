@@ -73,6 +73,8 @@ ProjMode* Pars::createProjMode() const
       return new ProjModeRadial(projargs);
     case RADIAL_SYM:
       return new ProjModeRadialSym(projargs);
+    case BOX:
+      return new ProjModeBox(projargs);
     default:
       throw std::runtime_error("Invalid mode");
     }

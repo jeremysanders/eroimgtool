@@ -32,7 +32,7 @@ image in sky coordinates to remove nearby sources.
 
     Options:
       -h,--help                   Print this help message and exit
-      --proj ENUM:value in {det->2,fov->0,fov_sky->1,radial->3,radial_sym->4} OR {2,0,1,3,4} [0]
+      --proj ENUM:value in {box->5,det->2,fov->0,fov_sky->1,radial->3,radial_sym->4} OR {5,2,0,1,3,4} [0] 
                                   Projection mode
       --proj-args FLOAT ...       List of arguments for projection
       --tm INT:INT in [1 - 7] [1]
@@ -51,11 +51,12 @@ image in sky coordinates to remove nearby sources.
 
 ## Projection modes
 
-  * `fov`: Average PSF within the standard circular mask, in detector coordinates. The source is located at the centre of the image.
-  * `fov_sky`: Average PSF within the standard circular mask, rotated into sky coordinates. The source is located at the centre of the image.
+  * `fov`: Region within the standard circular mask, in detector coordinates. The source is located at the centre of the image.
+  * `fov_sky`: Region within the standard circular mask, rotated into sky coordinates. The source is located at the centre of the image.
   * `det`: Detector coordinates, with the image centred on the centre of the detector.
-  * `radial`: Average PSF within the radial range (Rin<=r<Rout) given by `--proj-args`.
-  * `radial_sym`: Average PSF within the radial range (Rin<=r<Rout) given by `--proj-args`, rotated by angle of the source on the detector, to make a symmetric PSF for a radial region.
+  * `radial`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`.
+  * `radial_sym`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`, rotated by angle of the source on the detector, to make a symmetric PSF for a radial region.
+  * `box`: Region within detector coordinates (x1<=x<x2, y1<=y<y2), given by `--proj-args x1 y1 x2 y2`.
 
 ## Example command line
 

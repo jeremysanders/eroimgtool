@@ -64,4 +64,14 @@ public:
   void message() const;
 };
 
+class ProjModeBox : public ProjMode
+{
+public:
+  ProjModeBox(const std::vector<float>& args);
+  bool sourceValid(Point ccdpt) const;
+  void message() const;
+
+  float x1, y1, x2, y2;
+};
+
 #endif
