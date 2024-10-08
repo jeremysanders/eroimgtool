@@ -17,9 +17,10 @@
 int main(int argc, char** argv)
 {
   // whether to run in imaging or exposure mode
-  enum Mode : int { IMAGE, EXPOS };
-  std::map<std::string, Mode> modemap{{"image", IMAGE}, {"expos", EXPOS}};
-  Mode mode;
+  std::map<std::string, Pars::runmodetype> modemap{
+    {"image", Pars::IMAGE},
+    {"expos", Pars::EXPOS}
+  };
 
   // map projection mode names to enum values
   std::map<std::string, Pars::projmodetype> projmodemap{
@@ -66,8 +67,10 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--threads", pars.threads, "Number of threads")
     ->capture_default_str();
+  app.add_option("--bitpix", pars.bitpix, "How many bitpix to use for output exposure maps")
+    ->capture_default_str();
 
-  app.add_option("mode", mode, "Program mode")
+  app.add_option("mode", pars.mode, "Program mode")
     ->required()
     ->transform(CLI::CheckedTransformer(modemap, CLI::ignore_case));
   app.add_option("event", pars.evt_fn, "Event filename")
@@ -80,12 +83,12 @@ int main(int argc, char** argv)
 
   try
     {
-      switch(mode)
+      switch(pars.mode)
         {
-        case IMAGE:
+        case Pars::IMAGE:
           imageMode(pars);
           break;
-        case EXPOS:
+        case Pars::EXPOS:
           exposMode(pars);
           break;
         }

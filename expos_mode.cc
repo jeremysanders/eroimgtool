@@ -162,5 +162,5 @@ void exposMode(const Pars& pars)
 
   Point imgcen = pars.imageCentre();
   std::printf("  - writing output image to %s\n", pars.out_fn.c_str());
-  write_fits_image(pars.out_fn, writeimg, imgcen.x, imgcen.y, pars.pixsize);
+  write_fits_image(pars.out_fn, writeimg, imgcen.x, imgcen.y, pars.pixsize, true, pars.bitpix);
 }

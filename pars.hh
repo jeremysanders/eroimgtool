@@ -28,6 +28,8 @@ public:
   std::unique_ptr<ProjMode> createProjMode() const;
   Point imageCentre() const;
 
+  std::vector<std::string> getHeaders() const;
+
 public:
   enum projmodetype {
     AVERAGE_FOV, AVERAGE_FOV_SKY, WHOLE_DET,
@@ -35,7 +37,12 @@ public:
     BOX
   };
 
+  enum runmodetype : int { IMAGE, EXPOS };
+
 public:
+  // Mode to use
+  runmodetype mode;
+
   // TM to process
   int tm;
   // source position
@@ -56,6 +63,9 @@ public:
   unsigned xw, yw;
   // output pixel size
   float pixsize;
+
+  // bitpix for exposure map
+  int bitpix;
 
   // time delta for exposure map
   double deltat;

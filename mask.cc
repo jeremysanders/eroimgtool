@@ -245,14 +245,14 @@ PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
   // add mask for the central source, if requested
   if(src_rad > 0)
     {
-      const int npts = 64; // number of points in "circular" polygon
+      const int npts = 32; // number of points in "circular" polygon
       auto [ccdx, ccdy] = cc.radec2ccd(src_ra, src_dec);
       polys.emplace_back();
       Poly& poly = polys.back();
       poly.pts.reserve(npts);
       for(int i=0; i<npts; ++i)
         {
-          float theta = (2*PI/npts) * i;
+          float theta = (2*PI/npts) * (i+0.11);
           poly.add(Point(ccdx + src_rad*std::cos(theta),
                          ccdy + src_rad*std::sin(theta)));
         }

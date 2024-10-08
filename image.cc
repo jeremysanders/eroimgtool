@@ -1,5 +1,7 @@
+#include <cmath>
 #include <limits>
 #include <filesystem>
+#include <stdexcept>
 
 #include <fitsio.h>
 
@@ -76,10 +78,31 @@ void write_fits_image(const std::string& filename,
   check_fitsio_status(status);
 }
 
+static std::tuple<std::valarray<int>, double> make_int_arr(const std::valarray<float> &inarr, int maxval)
+{
+  double arrmax = inarr.max();
+  if(inarr.min() < 0)
+    throw std::runtime_error("Array contains negative elements");
+
+  // prevent division by zero
+  if(arrmax == 0.)
+    arrmax = 1.;
+
+  double scale = maxval / arrmax;
+
+  std::valarray<int> intarr(inarr.size());
+
+  for(size_t i=0; i != intarr.size(); ++i)
+    intarr[i] = int(std::round(inarr[i] * scale));
+
+  return std::make_tuple(intarr, 1/scale);
+}
+
 void write_fits_image(const std::string& filename,
                       const Image<float>& img,
                       float xc, float yc, float pixscale,
-                      bool overwrite)
+                      bool overwrite,
+                      int bitpix)
 {
   if(overwrite)
     std::filesystem::remove(filename);
@@ -92,11 +115,44 @@ void write_fits_image(const std::string& filename,
 
   long dims[] = {img.xw, img.yw};
   long fpixel[] = {1,1};
-  fits_create_img(ff, FLOAT_IMG, 2, dims, &status);
-  fits_write_pix(ff, TFLOAT, fpixel, img.xw*img.yw,
-                 const_cast<float*>(&img.arr[0]),
-                 &status);
-  check_fitsio_status(status);
+
+  switch(bitpix)
+    {
+    case -32:
+      fits_create_img(ff, FLOAT_IMG, 2, dims, &status);
+      fits_write_pix(ff, TFLOAT, fpixel, img.xw*img.yw,
+                     const_cast<float*>(&img.arr[0]),
+                     &status);
+      break;
+    case 8:
+      {
+        auto [intarr, scale] = make_int_arr(img.arr, 255);
+        fits_create_img(ff, BYTE_IMG, 2, dims, &status);
+        fits_write_pix(ff, TINT, fpixel, img.xw*img.yw,
+                       const_cast<int*>(&intarr[0]),
+                       &status);
+        fits_write_key(ff, TDOUBLE, "BSCALE", &scale, "Data scaling", &status);
+        double zero = 0;
+        fits_write_key(ff, TDOUBLE, "BZERO", &zero, "Data offset", &status);
+      }
+      break;
+    case 16:
+      {
+        auto [intarr, scale] = make_int_arr(img.arr, 32767);
+        fits_create_img(ff, SHORT_IMG, 2, dims, &status);
+        fits_write_pix(ff, TINT, fpixel, img.xw*img.yw,
+                       const_cast<int*>(&intarr[0]),
+                       &status);
+        fits_write_key(ff, TDOUBLE, "BSCALE", &scale, "Data scaling", &status);
+        double zero = 0;
+        fits_write_key(ff, TDOUBLE, "BZERO", &zero, "Data offset", &status);
+      }
+      break;
+
+    default:
+      throw std::runtime_error("Invalid bitpix");
+    }
+      check_fitsio_status(status);
   write_header(ff, xc, yc, pixscale);
 
   fits_close_file(ff, &status);

@@ -7,13 +7,15 @@
 #include "pars.hh"
 
 Pars::Pars()
-: tm(1),
+: mode(IMAGE),
+  tm(1),
   src_ra(0), src_dec(0),
   pimin(300), pimax(2300),
   projmode(AVERAGE_FOV),
   threads(1),
   xw(512), yw(512),
   pixsize(1),
+  bitpix(-32),
   deltat(0.01),
   masksrcrad(0)
 {
@@ -97,4 +99,43 @@ std::unique_ptr<ProjMode> Pars::createProjMode() const
 Point Pars::imageCentre() const
 {
   return Point(xw/2, yw/2);
+}
+
+std::vector<std::string> Pars::getHeaders() const
+{
+  std::vector<std::string> hdrs;
+
+  hdrs.emplace_back("--tm=" + std::to_string(tm));
+  hdrs.emplace_back("--ra=" + std::to_string(src_ra));
+  hdrs.emplace_back("--dec=" + std::to_string(src_dec));
+  hdrs.emplace_back("--pi-min=" + std::to_string(pimin));
+  hdrs.emplace_back("--pi-max=" + std::to_string(pimax));
+  hdrs.emplace_back("--proj=" + std::to_string(projmode));
+
+  if(!projargs.empty())
+    {
+      hdrs.emplace_back("--proj-args");
+      std::string temp;
+      for(auto v : projargs)
+        temp = temp + std::to_string(v) + " ";
+      hdrs.emplace_back(temp);
+    }
+
+  hdrs.emplace_back("--threads=" + std::to_string(threads));
+  hdrs.emplace_back("--xw=" + std::to_string(xw));
+  hdrs.emplace_back("--yw=" + std::to_string(yw));
+  hdrs.emplace_back("--pixsize=" + std::to_string(pixsize));
+  hdrs.emplace_back("--delta-t=" + std::to_string(deltat));
+  hdrs.emplace_back("--mask-src-rad=" + std::to_string(masksrcrad));
+
+  if(!mask_fn.empty())
+    hdrs.emplace_back("--mask=" + mask_fn);
+  if(!gti_fn.empty())
+    hdrs.emplace_back("--gti=" + gti_fn);
+
+  hdrs.emplace_back(std::to_string(mode));
+  hdrs.emplace_back(evt_fn);
+  hdrs.emplace_back(out_fn);
+
+  return hdrs;
 }
