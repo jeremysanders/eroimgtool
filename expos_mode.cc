@@ -18,14 +18,14 @@ struct TimeSeg
 
   size_t idx;
   double t;
-  double dt;
+  float dt;
 };
 
 static void processGTIs(size_t num,
                         std::vector<TimeSeg>& times,
                         std::mutex& mutex,
                         Pars pars, GTITable gti, AttitudeTable att,
-                        BadPixTable bp,
+                        DetMap detmap,
                         Mask mask, InstPar instpar,
                         Image<double>& finalimg)
 {
@@ -35,8 +35,9 @@ static void processGTIs(size_t num,
 
   // output image
   Image<double> img(pars.xw, pars.yw, 0.f);
-  // masked image during time step
-  Image<uint8_t> imgt(pars.xw, pars.yw, 0);
+
+  // image during time step
+  Image<float> imgt(pars.xw, pars.yw, 0);
 
   for(;;)
     {
@@ -71,25 +72,34 @@ static void processGTIs(size_t num,
       auto mat = projmode->rotationMatrix(att_roll, delpt);
       Point projorigin = projmode->origin(srcccd);
 
-      // polygons defining detector
-      PolyVec detpolys(bp.getPolyMask(timeseg.t));
-      applyShiftRotationScaleShift(detpolys, mat, projorigin, 1/pars.pixsize, imgcen);
+      const Image<float>& dmimg = detmap.getMap(timeseg.t);
+      // iterate over output pixels
+      for(int y=0; y<int(pars.yw); ++y)
+        for(int x=0; x<int(pars.xw); ++x)
+          {
+            // offset from centre of image in detector coordinate units
+            Point delta = (Point(x,y) - imgcen) * pars.pixsize;
+            // rotated into detector plane
+            Point rot = mat.rotaterev(delta);
+            Point det = rot + projorigin;
 
-      // polygons with bad regions
+            int dix = int(std::floor(det.x-0.5f));
+            int diy = int(std::floor(det.y-0.5f));
+            if(dix>=0 && diy>=0 && dix<int(CCD_XW) && diy<int(CCD_YW))
+              imgt(x, y) = dmimg(dix, diy) * timeseg.dt;
+            else
+              imgt(x, y) = 0;
+          }
+
+      // zero out polygons with bad regions
       PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
       applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
-
-      imgt = 0;
-      for(auto& poly: detpolys)
-        fillPoly(poly, imgt, 1);
       for(auto& poly: maskedpolys)
         fillPoly(poly, imgt, 0);
 
       int npix = img.xw * img.yw;
       for(int i=0; i<npix; ++i)
-        img.arr[i] += (imgt.arr[i]==1) ? timeseg.dt : 0.;
-
-      //fillPoly2(detpolys, maskedpolys, img, timeseg.dt);
+        img.arr[i] += imgt.arr[i];
 
     } // input times
 
@@ -98,7 +108,7 @@ static void processGTIs(size_t num,
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
-  auto [events, gti, att, bp, deadc] = pars.loadEventFile();
+  auto [events, gti, att, detmap, deadc] = pars.loadEventFile();
 
   Mask mask = pars.loadMask();
 
@@ -140,7 +150,7 @@ void exposMode(const Pars& pars)
   if(pars.threads <= 1)
     {
       processGTIs(num, timesegs, mutex,
-                  pars, gti, att, bp,
+                  pars, gti, att, detmap,
                   mask, instpar, sumimg);
     }
   else
@@ -149,7 +159,7 @@ void exposMode(const Pars& pars)
       for(unsigned i=0; i != pars.threads; ++i)
         threads.emplace_back(processGTIs,
                              num, std::ref(timesegs), std::ref(mutex),
-                             pars, gti, att, bp, mask, instpar,
+                             pars, gti, att, detmap, mask, instpar,
                              std::ref(sumimg));
       for(auto& thread : threads)
         thread.join();

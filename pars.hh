@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "attitude.hh"
-#include "badpix.hh"
 #include "deadcor.hh"
+#include "detmap.hh"
 #include "events.hh"
 #include "geom.hh"
 #include "gti.hh"
@@ -21,7 +21,7 @@ class Pars
 public:
   Pars();
   std::tuple<EventTable,GTITable,
-             AttitudeTable,BadPixTable,
+             AttitudeTable,DetMap,
              DeadCorTable> loadEventFile() const;
   InstPar loadInstPar() const;
   Mask loadMask() const;

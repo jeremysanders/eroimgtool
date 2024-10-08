@@ -21,7 +21,7 @@ Pars::Pars()
 {
 }
 
-std::tuple<EventTable,GTITable,AttitudeTable,BadPixTable,DeadCorTable>
+std::tuple<EventTable,GTITable,AttitudeTable,DetMap,DeadCorTable>
 Pars::loadEventFile() const
 {
   int status = 0;
@@ -39,7 +39,7 @@ Pars::loadEventFile() const
   events.filter_gti(gti);
 
   AttitudeTable att(ff, tm);
-  BadPixTable badpix(ff, tm);
+  DetMap detmap(ff, tm);
   DeadCorTable deadc(ff, tm);
 
   fits_close_file(ff, &status);
@@ -59,7 +59,7 @@ Pars::loadEventFile() const
       events.filter_gti(gti);
     }
 
-  return std::make_tuple(events, gti, att, badpix, deadc);
+  return std::make_tuple(events, gti, att, detmap, deadc);
 }
 
 InstPar Pars::loadInstPar() const

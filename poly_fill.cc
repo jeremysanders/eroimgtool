@@ -74,7 +74,7 @@ inline int nextwrap(int i, int npts)
   return (i+1==npts) ? 0 : i+1;
 }
 
-void fillPoly(const Poly& poly, Image<uint8_t>& outimg, uint8_t val)
+void fillPoly(const Poly& poly, Image<float>& outimg, float val)
 {
   const int xw = outimg.xw;
   const int yw = outimg.yw;

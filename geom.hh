@@ -50,6 +50,8 @@ struct RotationMatrix
     : m00(v00), m01(v01), m10(v10), m11(v11) {};
   Point rotate(Point pt) const { return Point(pt.x*m00+pt.y*m01,
                                               pt.x*m10+pt.y*m11); }
+  Point rotaterev(Point pt) const { return Point( pt.x*m00-pt.y*m01,
+                                                 -pt.x*m10+pt.y*m11); }
 
   float m00, m01, m10, m11;
 };

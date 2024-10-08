@@ -15,8 +15,8 @@ static void processEvents(size_t chunk_size,
                           std::vector<size_t>& chunks,
                           std::mutex& mutex,
                           const EventTable& events,
-                          Pars pars, GTITable gti, AttitudeTable att, BadPixTable bp,
-                          Mask mask, InstPar instpar,
+                          Pars pars, GTITable gti, AttitudeTable att,
+                          DetMap detmap, Mask mask, InstPar instpar,
                           Image<int>& finalimg)
 {
   auto projmode = pars.createProjMode();
@@ -45,7 +45,7 @@ static void processEvents(size_t chunk_size,
       for(size_t i=evtidx; i!=std::min(evtidx+chunk_size, events.num_entries); ++i)
         {
           // skip events on bad pixels
-          if( bp.getMask(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0 )
+          if( detmap.getMap(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0.f )
             continue;
 
           Point evtpt(events.ccdx[i], events.ccdy[i]);
@@ -91,7 +91,7 @@ static void processEvents(size_t chunk_size,
 void imageMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
-  auto [events, gti, att, bp, deadc] = pars.loadEventFile();
+  auto [events, gti, att, detmap, deadc] = pars.loadEventFile();
   Mask mask = pars.loadMask();
 
   pars.createProjMode()->message();
@@ -112,7 +112,7 @@ void imageMode(const Pars& pars)
     {
       processEvents(chunk_size, chunks, mutex,
                     events,
-                    pars, gti, att, bp, mask, instpar, sumimg);
+                    pars, gti, att, detmap, mask, instpar, sumimg);
     }
   else
     {
@@ -121,7 +121,7 @@ void imageMode(const Pars& pars)
         threads.emplace_back(processEvents,
                              chunk_size, std::ref(chunks), std::ref(mutex),
                              std::ref(events),
-                             pars, gti, att, bp, mask, instpar,
+                             pars, gti, att, detmap, mask, instpar,
                              std::ref(sumimg));
       for(auto& thread : threads)
         thread.join();
