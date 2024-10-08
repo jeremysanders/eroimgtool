@@ -10,7 +10,7 @@ public:
   virtual bool sourceValid(Point ccdpt) const = 0;
 
   // get matrix to rotate photons or exposure
-  virtual RotationMatrix rotationMatrix(double roll, Point delccd) const;
+  virtual Matrix2 rotationMatrix(double roll, Point delccd) const;
 
   // origin to use given source
   virtual Point origin(Point ccdpt) const;
@@ -32,7 +32,7 @@ class ProjModeAverageFoVSky : public ProjMode
 {
 public:
   bool sourceValid(Point ccdpt) const;
-  RotationMatrix rotationMatrix(double roll, Point delccd) const;
+  Matrix2 rotationMatrix(double roll, Point delccd) const;
   void message() const;
 };
 
@@ -60,7 +60,7 @@ class ProjModeRadialSym : public ProjModeRadial
 {
 public:
   ProjModeRadialSym(const std::vector<float>& args) : ProjModeRadial(args) {}
-  RotationMatrix rotationMatrix(double roll, Point delccd) const;
+  Matrix2 rotationMatrix(double roll, Point delccd) const;
   void message() const;
 };
 

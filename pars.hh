@@ -56,6 +56,9 @@ public:
   // arguments to projection mode
   std::vector<float> projargs;
 
+  // arguments for extra mask values
+  std::vector<double> maskpts;
+
   // number of threads to use
   unsigned threads;
 
@@ -69,9 +72,6 @@ public:
 
   // time delta for exposure map
   double deltat;
-
-  // additionally mask source out to this radius (pixels)
-  float masksrcrad;
 
   // filenames
   std::string evt_fn;

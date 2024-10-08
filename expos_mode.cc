@@ -66,22 +66,24 @@ static void processGTIs(size_t num,
         continue;
 
       if( timeseg.idx % 200 == 0 )
-        std::printf("Iteration %.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
+        std::printf("Iteration %5.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
 
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto mat = projmode->rotationMatrix(att_roll, delpt);
+      auto matrev = projmode->rotationMatrix(-att_roll, delpt);
       Point projorigin = projmode->origin(srcccd);
 
+      // detector map for time
       const Image<float>& dmimg = detmap.getMap(timeseg.t);
+
+      // include pixel size in rotation matrix
+      matrev.scale(pars.pixsize);
+
       // iterate over output pixels
       for(int y=0; y<int(pars.yw); ++y)
         for(int x=0; x<int(pars.xw); ++x)
           {
-            // offset from centre of image in detector coordinate units
-            Point delta = (Point(x,y) - imgcen) * pars.pixsize;
-            // rotated into detector plane
-            Point rot = mat.rotaterev(delta);
-            Point det = rot + projorigin;
+            // rotate around imgcen and move to origin
+            Point det = matrev.apply(Point(x,y)-imgcen) + projorigin;
 
             int dix = int(std::floor(det.x-0.5f));
             int diy = int(std::floor(det.y-0.5f));
@@ -93,6 +95,7 @@ static void processGTIs(size_t num,
 
       // zero out polygons with bad regions
       PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
+      auto mat = projmode->rotationMatrix(att_roll, delpt);
       applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
       for(auto& poly: maskedpolys)
         fillPoly(poly, imgt, 0);

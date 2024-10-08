@@ -51,6 +51,7 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--mask", pars.mask_fn, "Input mask filename")
     ->check(CLI::ExistingFile);
+  app.add_option("--mask-pts", pars.maskpts, "Extra masks (list ra,dec,rad_pix)");
   app.add_option("--gti", pars.gti_fn, "Additional GTI file to merge")
     ->check(CLI::ExistingFile);
   app.add_option("--xw", pars.xw, "X output image size")
@@ -62,8 +63,6 @@ int main(int argc, char** argv)
   app.add_option("--pi-max", pars.pimax, "Maximum PI value (image mode)")
     ->capture_default_str();
   app.add_option("--delta-t", pars.deltat, "Time step (s)")
-    ->capture_default_str();
-  app.add_option("--mask-src-rad", pars.masksrcrad, "Source mask radius (pix)")
     ->capture_default_str();
   app.add_option("--threads", pars.threads, "Number of threads")
     ->capture_default_str();

@@ -42,16 +42,18 @@ struct Rect
 };
 
 
-// for defining a 2d rotation
-struct RotationMatrix
+// 2x2 matrix
+struct Matrix2
 {
-  RotationMatrix() : m00(1), m01(0), m10(0), m11(1) {};
-  RotationMatrix(float v00, float v01, float v10, float v11)
+  Matrix2() : m00(1), m01(0), m10(0), m11(1) {};
+  Matrix2(float v00, float v01, float v10, float v11)
     : m00(v00), m01(v01), m10(v10), m11(v11) {};
-  Point rotate(Point pt) const { return Point(pt.x*m00+pt.y*m01,
-                                              pt.x*m10+pt.y*m11); }
-  Point rotaterev(Point pt) const { return Point( pt.x*m00-pt.y*m01,
-                                                 -pt.x*m10+pt.y*m11); }
+  void scale(float v)
+  {
+    m00 *= v; m01 *= v; m10 *= v; m11 *= v;
+  }
+  Point apply(Point pt) const { return Point(pt.x*m00+pt.y*m01,
+                                             pt.x*m10+pt.y*m11); }
 
   float m00, m01, m10, m11;
 };
@@ -123,7 +125,7 @@ inline bool is_inside(const PolyVec& pv, const Point& pt)
 void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);
 
 // move to origin origrot, apply rotation matrix, then scale output, then shift to origimg
-void applyShiftRotationScaleShift(PolyVec& polys, const RotationMatrix& mat, Point origrot,
+void applyShiftRotationScaleShift(PolyVec& polys, const Matrix2& mat, Point origrot,
                                   float scale, Point origimg);
 
 #endif

@@ -74,7 +74,7 @@ static void processEvents(size_t chunk_size,
           // apply any necessary rotation for mode
           Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
           auto mat = projmode->rotationMatrix(att_roll, delpt);
-          relpt = mat.rotate(relpt);
+          relpt = mat.apply(relpt);
 
           // calculate coordinates in image and add to pixel
           Point scalept = relpt/pars.pixsize + imgcen;

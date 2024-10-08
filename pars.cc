@@ -16,8 +16,7 @@ Pars::Pars()
   xw(512), yw(512),
   pixsize(1),
   bitpix(-32),
-  deltat(0.01),
-  masksrcrad(0)
+  deltat(0.01)
 {
 }
 
@@ -70,8 +69,7 @@ InstPar Pars::loadInstPar() const
 Mask Pars::loadMask() const
 {
   Mask mask(mask_fn);
-  if(masksrcrad>0)
-    mask.setSrcMask(src_ra, src_dec, masksrcrad);
+  mask.setMaskPts(maskpts);
   return mask;
 }
 
@@ -101,6 +99,22 @@ Point Pars::imageCentre() const
   return Point(xw/2, yw/2);
 }
 
+namespace
+{
+  // combine together list of values
+  template<class T> std::string str_list(const std::vector<T>& vals)
+  {
+    std::string retn;
+    for(auto& v : vals)
+      {
+        if(!retn.empty())
+          retn += ' ';
+        retn += std::to_string(v);
+      }
+    return retn;
+  }
+}
+
 std::vector<std::string> Pars::getHeaders() const
 {
   std::vector<std::string> hdrs;
@@ -113,23 +127,19 @@ std::vector<std::string> Pars::getHeaders() const
   hdrs.emplace_back("--proj=" + std::to_string(projmode));
 
   if(!projargs.empty())
-    {
-      hdrs.emplace_back("--proj-args");
-      std::string temp;
-      for(auto v : projargs)
-        temp = temp + std::to_string(v) + " ";
-      hdrs.emplace_back(temp);
-    }
+    hdrs.emplace_back("--proj-args " + str_list(projargs));
 
   hdrs.emplace_back("--threads=" + std::to_string(threads));
   hdrs.emplace_back("--xw=" + std::to_string(xw));
   hdrs.emplace_back("--yw=" + std::to_string(yw));
   hdrs.emplace_back("--pixsize=" + std::to_string(pixsize));
   hdrs.emplace_back("--delta-t=" + std::to_string(deltat));
-  hdrs.emplace_back("--mask-src-rad=" + std::to_string(masksrcrad));
 
   if(!mask_fn.empty())
     hdrs.emplace_back("--mask=" + mask_fn);
+  if(!maskpts.empty())
+    hdrs.emplace_back("--mask-pts " + str_list(maskpts));
+
   if(!gti_fn.empty())
     hdrs.emplace_back("--gti=" + gti_fn);
 

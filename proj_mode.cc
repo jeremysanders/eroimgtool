@@ -7,9 +7,9 @@
 
 // FIXME: assumption centre of coords is 192,192
 
-RotationMatrix ProjMode::rotationMatrix(double roll, Point delccd) const
+Matrix2 ProjMode::rotationMatrix(double roll, Point delccd) const
 {
-  return RotationMatrix();
+  return Matrix2();
 }
 
 Point ProjMode::origin(Point ccdpt) const
@@ -43,12 +43,12 @@ bool ProjModeAverageFoVSky::sourceValid(Point ccdpt) const
   return rad2 < sqr(192);
 }
 
-RotationMatrix ProjModeAverageFoVSky::rotationMatrix(double roll,
+Matrix2 ProjModeAverageFoVSky::rotationMatrix(double roll,
                                                      Point delccd) const
 {
   float c = std::cos((270-roll)*DEG2RAD);
   float s = std::sin((270-roll)*DEG2RAD);
-  return RotationMatrix(c, -s, s, c);
+  return Matrix2(c, -s, s, c);
 }
 
 void ProjModeAverageFoVSky::message() const
@@ -109,13 +109,13 @@ void ProjModeRadialSym::message() const
               rin, rout);
 }
 
-RotationMatrix ProjModeRadialSym::rotationMatrix(double roll,
+Matrix2 ProjModeRadialSym::rotationMatrix(double roll,
                                                  Point delccd) const
 {
   float theta = -std::atan2(delccd.y, delccd.x);
   float s = std::sin(theta);
   float c = std::cos(theta);
-  return RotationMatrix(c, -s, s, c);
+  return Matrix2(c, -s, s, c);
 }
 
 ////////////////////////////////////////////////////////////////////

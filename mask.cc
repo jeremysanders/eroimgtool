@@ -92,12 +92,10 @@ namespace
 } // namespace
 
 Mask::Mask()
-  : src_ra(0), src_dec(0), src_rad(0)
 {
 }
 
 Mask::Mask(const std::string& filename, bool simplify)
-  : src_ra(0), src_dec(0), src_rad(0)
 {
   if(filename.empty())
     {
@@ -171,12 +169,17 @@ Mask::Mask(const std::string& filename, bool simplify)
 
 }
 
-void Mask::setSrcMask(double ra, double dec, float rad)
+void Mask::setMaskPts(const std::vector<double>& pts)
 {
-  std::printf("  - masking source to radius %g pix\n", rad);
-  src_ra = ra;
-  src_dec = dec;
-  src_rad = rad;
+  if(pts.size() % 3 != 0)
+    throw std::runtime_error("List of parameters for masked points must "
+                             "be multiple of three (ra,dec,rad_pix)");
+  mask_pts = pts;
+  for(unsigned i=0; i<pts.size(); i+=3)
+    {
+      std::printf("  - masking source (%g,%g) to radius %g pix\n",
+                  pts[i], pts[i+1], pts[i+2]);
+    }
 }
 
 void Mask::simplifyPolys()
@@ -225,7 +228,6 @@ void Mask::writeRegion(const std::string& filename) const
   std::fclose(fout);
 }
 
-
 PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
 {
   PolyVec polys;
@@ -242,19 +244,23 @@ PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
         }
     }
 
-  // add mask for the central source, if requested
-  if(src_rad > 0)
+  // add masks for sources, if requested
+  for(unsigned i=0; i<mask_pts.size(); i+=3)
     {
+      double ra = mask_pts[i];
+      double dec = mask_pts[i+1];
+      double rad = mask_pts[i+2];
+
       const int npts = 32; // number of points in "circular" polygon
-      auto [ccdx, ccdy] = cc.radec2ccd(src_ra, src_dec);
+      auto [ccdx, ccdy] = cc.radec2ccd(ra, dec);
       polys.emplace_back();
       Poly& poly = polys.back();
       poly.pts.reserve(npts);
       for(int i=0; i<npts; ++i)
         {
-          float theta = (2*PI/npts) * (i+0.11);
-          poly.add(Point(ccdx + src_rad*std::cos(theta),
-                         ccdy + src_rad*std::sin(theta)));
+          double theta = (2*PI/npts) * (i+0.11);
+          poly.add(Point(ccdx + rad*std::cos(theta),
+                         ccdy + rad*std::sin(theta)));
         }
     }
 
