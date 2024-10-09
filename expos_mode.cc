@@ -13,9 +13,7 @@
 
 struct TimeSeg
 {
-  TimeSeg() {}
-  TimeSeg(size_t _idx, double _t, float _dt) : idx(_idx), t(_t), dt(_dt) {}
-
+  double src_ra, src_dec;
   size_t idx;
   double t;
   float dt;
@@ -58,7 +56,7 @@ static void processGTIs(size_t num,
       coordconv.updatePointing(att_ra, att_dec, att_roll);
 
       // get ccd coordinates of source
-      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+      auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(timeseg.src_ra, timeseg.src_dec);
 
       // skip if source is outsite allowed region
       Point srcccd(src_ccdx, src_ccdy);
@@ -120,10 +118,11 @@ void exposMode(const Pars& pars)
   Mask mask = pars.loadMask();
 
   pars.createProjMode()->message();
+  pars.showSources();
 
   std::printf("Building exposure map\n");
 
-  // put times in vector
+  // put sources and times in vector
   std::vector<TimeSeg> timesegs;
   for(int gtii=0; gtii<int(gti.num); ++gtii)
     {
@@ -139,7 +138,9 @@ void exposMode(const Pars& pars)
         {
           double t = tstart + (ti+0.5)*deltat;
           float deadcf = deadc.interpolate(t);
-          timesegs.emplace_back(timesegs.size(), t, deltat*deadcf);
+          for(auto& srcpos : pars.sources)
+            timesegs.emplace_back( TimeSeg({
+                  srcpos[0], srcpos[1], timesegs.size(), t, float(deltat*deadcf)}) );
         }
     }
   // we process them in order of time, so reverse so we pop from back

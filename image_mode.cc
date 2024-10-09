@@ -11,8 +11,16 @@
 #include "poly_fill.hh"
 #include "events.hh"
 
-static void processEvents(size_t chunk_size,
-                          std::vector<size_t>& chunks,
+namespace
+{
+  struct Chunk
+  {
+    double src_ra, src_dec;
+    size_t start, size;
+  };
+}
+
+static void processEvents(std::vector<Chunk>& chunks,
                           std::mutex& mutex,
                           const EventTable& events,
                           Pars pars, GTITable gti, AttitudeTable att,
@@ -29,7 +37,7 @@ static void processEvents(size_t chunk_size,
   for(;;)
     {
       // get next time to process
-      unsigned evtidx;
+      Chunk chunk;
       {
         std::lock_guard<std::mutex> lock(mutex);
         if(chunks.empty())
@@ -38,11 +46,11 @@ static void processEvents(size_t chunk_size,
             finalimg.arr += img.arr;
             return;
           }
-        evtidx = chunks.back();
+        chunk = chunks.back();
         chunks.pop_back();
       }
 
-      for(size_t i=evtidx; i!=std::min(evtidx+chunk_size, events.num_entries); ++i)
+      for(size_t i=chunk.start; i!=std::min(chunk.start+chunk.size, events.num_entries); ++i)
         {
           // skip events on bad pixels
           if( detmap.getMap(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0.f )
@@ -60,7 +68,7 @@ static void processEvents(size_t chunk_size,
             continue;
 
           // get ccd coordinates of source
-          auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(pars.src_ra, pars.src_dec);
+          auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(chunk.src_ra, chunk.src_dec);
 
           // skip if source is outsite allowed region
           Point srcccd(src_ccdx, src_ccdy);
@@ -95,13 +103,17 @@ void imageMode(const Pars& pars)
   Mask mask = pars.loadMask();
 
   pars.createProjMode()->message();
+  pars.showSources();
 
   std::printf("Building image\n");
 
+  // build up a list of sources and chunks of photons
   constexpr size_t chunk_size = 400;
-  std::vector<size_t> chunks;
+  std::vector<Chunk> chunks;
   for(size_t i=0; i < events.num_entries; i += chunk_size)
-    chunks.push_back(i);
+    for(auto& srcpos : pars.sources)
+      chunks.push_back({srcpos[0], srcpos[1], i, chunk_size});
+  // we want it reversed, as vector processing starts from the end
   std::reverse(chunks.begin(), chunks.end());
 
   Image<int> sumimg(pars.xw, pars.yw, 0);
@@ -110,7 +122,7 @@ void imageMode(const Pars& pars)
 
   if(pars.threads <= 1)
     {
-      processEvents(chunk_size, chunks, mutex,
+      processEvents(chunks, mutex,
                     events,
                     pars, gti, att, detmap, mask, instpar, sumimg);
     }
@@ -119,7 +131,7 @@ void imageMode(const Pars& pars)
       std::vector<std::thread> threads;
       for(unsigned i=0; i != pars.threads; ++i)
         threads.emplace_back(processEvents,
-                             chunk_size, std::ref(chunks), std::ref(mutex),
+                             std::ref(chunks), std::ref(mutex),
                              std::ref(events),
                              pars, gti, att, detmap, mask, instpar,
                              std::ref(sumimg));

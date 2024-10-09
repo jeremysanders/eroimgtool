@@ -36,6 +36,9 @@ int main(int argc, char** argv)
   argv = app.ensure_utf8(argv);
 
   Pars pars;
+
+  app.add_option("--sources", pars.sources, "List of RA,Dec for sources")
+    ->delimiter(',')->expected(1,1000)->required();
   app.add_option("--proj", pars.projmode, "Projection mode")
     ->transform(CLI::CheckedTransformer(projmodemap, CLI::ignore_case))
     ->capture_default_str();
@@ -44,10 +47,6 @@ int main(int argc, char** argv)
   app.add_option("--tm", pars.tm, "TM number")
     ->check(CLI::Range(1,7))
     ->capture_default_str();
-  app.add_option("--ra", pars.src_ra, "RA of source (deg)")
-    ->required();
-  app.add_option("--dec", pars.src_dec, "Dec of source (deg)")
-    ->required();
   app.add_option("--pixsize", pars.pixsize, "Pixel size (detector pixels)")
     ->capture_default_str();
   app.add_option("--mask", pars.mask_fn, "Input mask filename")

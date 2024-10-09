@@ -24,6 +24,7 @@ public:
   std::tuple<EventTable,GTITable,
              AttitudeTable,DetMap,
              DeadCorTable> loadEventFile() const;
+  void showSources() const;
   InstPar loadInstPar() const;
   Mask loadMask() const;
   std::unique_ptr<ProjMode> createProjMode() const;
@@ -46,8 +47,10 @@ public:
 
   // TM to process
   int tm;
-  // source position
-  double src_ra, src_dec;
+
+  // source position(s) ra,dec
+  std::vector<std::array<double,2>> sources;
+
   // PI range
   float pimin, pimax;
 

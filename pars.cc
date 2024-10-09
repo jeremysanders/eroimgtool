@@ -9,7 +9,6 @@
 Pars::Pars()
 : mode(IMAGE),
   tm(1),
-  src_ra(0), src_dec(0),
   pimin(300), pimax(2300),
   projmode(AVERAGE_FOV),
   threads(1),
@@ -59,6 +58,13 @@ Pars::loadEventFile() const
     }
 
   return std::make_tuple(events, gti, att, detmap, deadc);
+}
+
+void Pars::showSources() const
+{
+  std::printf("Defined %ld source(s)\n", sources.size());
+  for(auto& src : sources)
+    std::printf("  - source (%g,%g)\n", src[0], src[1]);
 }
 
 InstPar Pars::loadInstPar() const
@@ -139,8 +145,9 @@ std::vector<std::string> Pars::getHeaders() const
   std::vector<std::string> hdrs;
 
   hdrs.emplace_back("--tm=" + std::to_string(tm));
-  hdrs.emplace_back("--ra=" + std::to_string(src_ra));
-  hdrs.emplace_back("--dec=" + std::to_string(src_dec));
+  if(!sources.empty())
+    hdrs.emplace_back("--sources " + str_list(sources));
+
   hdrs.emplace_back("--pi-min=" + std::to_string(pimin));
   hdrs.emplace_back("--pi-max=" + std::to_string(pimax));
   hdrs.emplace_back("--proj=" + std::to_string(projmode));
