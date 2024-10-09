@@ -85,10 +85,14 @@ static void processGTIs(size_t num,
             // rotate around imgcen and move to origin
             Point det = matrev.apply(Point(x,y)-imgcen) + projorigin;
 
-            int dix = int(std::floor(det.x-0.5f));
-            int diy = int(std::floor(det.y-0.5f));
+            // the funny +16. -16 is to ensure correct rounding around zero
+            // without this -0.5 > 0
+            // could use int(std::trunc()) instead, but seems slow!
+            int dix = int(det.x+(16.f-0.5f))-16;
+            int diy = int(det.y+(16.f-0.5f))-16;
+
             if(dix>=0 && diy>=0 && dix<int(CCD_XW) && diy<int(CCD_YW))
-              imgt(x, y) = dmimg(dix, diy) * timeseg.dt;
+              imgt(x, y) = dmimg(dix, diy);
             else
               imgt(x, y) = 0;
           }
@@ -102,7 +106,7 @@ static void processGTIs(size_t num,
 
       int npix = img.xw * img.yw;
       for(int i=0; i<npix; ++i)
-        img.arr[i] += imgt.arr[i];
+        img.arr[i] += imgt.arr[i] * timeseg.dt;
 
     } // input times
 
