@@ -22,7 +22,7 @@ class Mask
 public:
   Mask();
   Mask(const std::string& filename, bool simplify=false);
-  void setMaskPts(const std::vector<double>& pts);
+  void setMaskPts(const std::vector<std::array<double,3>>& pts);
   void simplifyPolys();
   void writeRegion(const std::string& filename) const;
 
@@ -30,7 +30,7 @@ public:
 
 private:
   CoordVecVec maskcoords;
-  std::vector<double> mask_pts;
+  std::vector<std::array<double,3>> mask_pts;
   float src_rad;
 };
 

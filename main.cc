@@ -39,7 +39,8 @@ int main(int argc, char** argv)
   app.add_option("--proj", pars.projmode, "Projection mode")
     ->transform(CLI::CheckedTransformer(projmodemap, CLI::ignore_case))
     ->capture_default_str();
-  app.add_option("--proj-args", pars.projargs, "List of arguments for projection");
+  app.add_option("--proj-args", pars.projargs, "List of arguments for projection")
+    ->delimiter(',');
   app.add_option("--tm", pars.tm, "TM number")
     ->check(CLI::Range(1,7))
     ->capture_default_str();
@@ -51,7 +52,8 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--mask", pars.mask_fn, "Input mask filename")
     ->check(CLI::ExistingFile);
-  app.add_option("--mask-pts", pars.maskpts, "Extra masks (list ra,dec,rad_pix)");
+  app.add_option("--mask-pts", pars.maskpts, "Extra masks (list ra,dec,rad_pix)")
+    ->delimiter(',');
   app.add_option("--gti", pars.gti_fn, "Additional GTI file to merge")
     ->check(CLI::ExistingFile);
   app.add_option("--xw", pars.xw, "X output image size")

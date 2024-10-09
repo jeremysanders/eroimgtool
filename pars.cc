@@ -101,18 +101,37 @@ Point Pars::imageCentre() const
 
 namespace
 {
-  // combine together list of values
-  template<class T> std::string str_list(const std::vector<T>& vals)
+  template<typename T> std::string str_list(const std::vector<T>& vals)
   {
     std::string retn;
     for(auto& v : vals)
       {
         if(!retn.empty())
-          retn += ' ';
+          retn += ',';
         retn += std::to_string(v);
       }
     return retn;
   }
+
+  template<typename T, size_t N> std::string str_list(const std::vector<std::array<T,N>>& vals)
+  {
+    std::string retn;
+    for(auto& arr : vals)
+      {
+        if(! retn.empty())
+          retn += ' ';
+        std::string sub;
+        for(auto& v : arr)
+          {
+            if(!sub.empty())
+              sub += ',';
+            sub += std::to_string(v);
+          }
+        retn += sub;
+      }
+    return retn;
+  }
+
 }
 
 std::vector<std::string> Pars::getHeaders() const

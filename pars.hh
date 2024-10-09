@@ -1,6 +1,7 @@
 #ifndef PARS_HH
 #define PARS_HH
 
+#include <array>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -57,7 +58,7 @@ public:
   std::vector<float> projargs;
 
   // arguments for extra mask values
-  std::vector<double> maskpts;
+  std::vector<std::array<double,3>> maskpts;
 
   // number of threads to use
   unsigned threads;

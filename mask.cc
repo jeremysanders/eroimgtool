@@ -169,16 +169,13 @@ Mask::Mask(const std::string& filename, bool simplify)
 
 }
 
-void Mask::setMaskPts(const std::vector<double>& pts)
+void Mask::setMaskPts(const std::vector<std::array<double,3>>& pts)
 {
-  if(pts.size() % 3 != 0)
-    throw std::runtime_error("List of parameters for masked points must "
-                             "be multiple of three (ra,dec,rad_pix)");
   mask_pts = pts;
-  for(unsigned i=0; i<pts.size(); i+=3)
+  for(auto& p : pts)
     {
       std::printf("  - masking source (%g,%g) to radius %g pix\n",
-                  pts[i], pts[i+1], pts[i+2]);
+                  p[0], p[1], p[2]);
     }
 }
 
@@ -244,12 +241,11 @@ PolyVec Mask::as_ccd_poly(const CoordConv& cc) const
         }
     }
 
-  // add masks for sources, if requested
-  for(unsigned i=0; i<mask_pts.size(); i+=3)
+  for(auto& mpt : mask_pts)
     {
-      double ra = mask_pts[i];
-      double dec = mask_pts[i+1];
-      double rad = mask_pts[i+2];
+      double ra = mpt[0];
+      double dec = mpt[1];
+      double rad = mpt[2];
 
       const int npts = 32; // number of points in "circular" polygon
       auto [ccdx, ccdy] = cc.radec2ccd(ra, dec);

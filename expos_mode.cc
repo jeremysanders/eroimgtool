@@ -65,7 +65,7 @@ static void processGTIs(size_t num,
       if( ! projmode->sourceValid(srcccd) )
         continue;
 
-      if( timeseg.idx % 200 == 0 )
+      if( timeseg.idx % 500 == 0 )
         std::printf("Iteration %5.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
 
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
@@ -86,8 +86,8 @@ static void processGTIs(size_t num,
             Point det = matrev.apply(Point(x,y)-imgcen) + projorigin;
 
             // the funny +16. -16 is to ensure correct rounding around zero
-            // without this -0.5 > 0
-            // could use int(std::trunc()) instead, but seems slow!
+            // without this -0.5 is rounded 0 due to truncation
+            // could use int(std::floor()) instead, but is quite a lot slower
             int dix = int(det.x+(16.f-0.5f))-16;
             int diy = int(det.y+(16.f-0.5f))-16;
 
