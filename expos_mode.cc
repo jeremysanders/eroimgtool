@@ -19,6 +19,20 @@ struct TimeSeg
   float dt;
 };
 
+// find minimum, subtract one, then limit to range minval to maxval
+inline int min4intclamp(float a, float b, float c, float d, int minval, int maxval)
+{
+  int x = int( std::floor(std::min(std::min(a, b), std::min(c, d))) );
+  return std::clamp(x-1, minval, maxval);
+}
+
+// find maximum, add one, then limit to range minval to maxval
+inline int max4intclamp(float a, float b, float c, float d, int minval, int maxval)
+{
+  int x = int( std::ceil(std::max(std::max(a, b), std::max(c, d))) );
+  return std::clamp(x+1, minval, maxval);
+}
+
 static void processGTIs(size_t num,
                         std::vector<TimeSeg>& times,
                         std::mutex& mutex,
@@ -67,38 +81,63 @@ static void processGTIs(size_t num,
         std::printf("Iteration %5.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
 
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
-      auto matrev = projmode->rotationMatrix(-att_roll, delpt);
       Point projorigin = projmode->origin(srcccd);
 
       // detector map for time
       const Image<float>& dmimg = detmap.getMap(timeseg.t);
 
-      // include pixel size in rotation matrix
+      // matrix to go from detector -> image, including pixel size
+      auto mat = projmode->rotationMatrix(att_roll, delpt);
+      mat.scale(1/pars.pixsize);
+
+      // matrix to go from image -> detector, including pixel size
+      auto matrev = projmode->rotationMatrix(-att_roll, delpt);
       matrev.scale(pars.pixsize);
 
-      // iterate over output pixels
-      for(int y=0; y<int(pars.yw); ++y)
-        for(int x=0; x<int(pars.xw); ++x)
-          {
-            // rotate around imgcen and move to origin
-            Point det = matrev.apply(Point(x,y)-imgcen) + projorigin;
+      // find range of coordinates of detector in output image
+      Point ic1 = mat.apply(Point(0,0) - projorigin) + imgcen;
+      Point ic2 = mat.apply(Point(CCD_XW,0) - projorigin) + imgcen;
+      Point ic3 = mat.apply(Point(0,CCD_YW) - projorigin) + imgcen;
+      Point ic4 = mat.apply(Point(CCD_XW,CCD_YW) - projorigin) + imgcen;
 
-            // the funny +16. -16 is to ensure correct rounding around zero
-            // without this -0.5 is rounded 0 due to truncation
-            // could use int(std::floor()) instead, but is quite a lot slower
-            int dix = int(det.x+(16.f-0.5f))-16;
-            int diy = int(det.y+(16.f-0.5f))-16;
+      const int minx = min4intclamp(ic1.x, ic2.x, ic3.x, ic4.x, 0, pars.xw-1);
+      const int maxx = max4intclamp(ic1.x, ic2.x, ic3.x, ic4.x, 0, pars.xw-1);
+      const int miny = min4intclamp(ic1.y, ic2.y, ic3.y, ic4.y, 0, pars.yw-1);
+      const int maxy = max4intclamp(ic1.y, ic2.y, ic3.y, ic4.y, 0, pars.yw-1);
 
-            if(dix>=0 && diy>=0 && dix<int(CCD_XW) && diy<int(CCD_YW))
-              imgt(x, y) = dmimg(dix, diy);
-            else
-              imgt(x, y) = 0;
-          }
+      // iterate over output image, pixel by pixel
+      float* optr = &imgt.arr[0];
+      for(int i=0; i<miny*int(pars.xw); ++i)
+        *optr++ = 0.f;
+      for(int y=miny; y<=maxy; ++y)
+        {
+          for(int x=0; x<minx; ++x)
+            *optr++ = 0.f;
+          for(int x=minx; x<=maxx; ++x)
+            {
+              // rotate around imgcen and move to origin
+              Point det = matrev.apply(Point(x,y)-imgcen) + projorigin;
+
+              // the funny +16. -16 is to ensure correct rounding around zero
+              // without this -0.5 is rounded 0 due to truncation
+              // could use int(std::floor()) instead, but is quite a lot slower
+              int dix = int(det.x+(16.f-0.5f))-16;
+              int diy = int(det.y+(16.f-0.5f))-16;
+
+              if(dix>=0 && diy>=0 && dix<int(CCD_XW) && diy<int(CCD_YW))
+                *optr++ = dmimg(dix, diy);
+              else
+                *optr++ = 0.f;
+            }
+          for(int x=maxx+1; x<int(pars.xw); ++x)
+            *optr++ = 0.f;
+        }
+      for(int i=(maxy+1)*int(pars.xw); i<int(pars.xw*pars.yw); ++i)
+        *optr++ = 0.f;
 
       // zero out polygons with bad regions
       PolyVec maskedpolys(mask.as_ccd_poly(coordconv));
-      auto mat = projmode->rotationMatrix(att_roll, delpt);
-      applyShiftRotationScaleShift(maskedpolys, mat, projorigin, 1/pars.pixsize, imgcen);
+      applyShiftRotationShift(maskedpolys, mat, projorigin, imgcen);
       for(auto& poly: maskedpolys)
         fillPoly(poly, imgt, 0);
 

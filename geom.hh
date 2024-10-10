@@ -124,8 +124,8 @@ inline bool is_inside(const PolyVec& pv, const Point& pt)
 // opoly is overwritten (not returned, so we don't have to reallocate)
 void poly_clip(const Poly& spoly, const Poly& cpoly, Poly& opoly);
 
-// move to origin origrot, apply rotation matrix, then scale output, then shift to origimg
-void applyShiftRotationScaleShift(PolyVec& polys, const Matrix2& mat, Point origrot,
-                                  float scale, Point origimg);
+// move to origin origrot, apply rotation matrix then shift to origimg
+void applyShiftRotationShift(PolyVec& polys, const Matrix2& mat,
+                             Point origrot, Point origimg);
 
 #endif
