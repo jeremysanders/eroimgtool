@@ -2,6 +2,7 @@
 // yuck
 #undef PI
 
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
