@@ -53,6 +53,7 @@ int main(int argc, char** argv)
     ->check(CLI::ExistingFile);
   app.add_option("--mask-pts", pars.maskpts, "Extra masks (list ra,dec,rad_pix)")
     ->delimiter(',');
+  app.add_flag("--detmap", pars.detmapmask, "Add CALDB DETMAP mask");
   app.add_option("--gti", pars.gti_fn, "Additional GTI file to merge")
     ->check(CLI::ExistingFile);
   app.add_option("--xw", pars.xw, "X output image size")

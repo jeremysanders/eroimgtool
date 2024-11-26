@@ -43,6 +43,7 @@ image in sky coordinates to remove nearby sources.
       --mask TEXT:FILE            Input mask filename
       --mask-pts [FLOAT,FLOAT,FLOAT] ...
                                   Extra masks (list ra,dec,rad_pix)
+      --detmap                    Add CALDB DETMAP mask
       --gti TEXT:FILE             Additional GTI file to merge
       --xw UINT [512]             X output image size
       --yw UINT [512]             Y output image size
@@ -54,8 +55,8 @@ image in sky coordinates to remove nearby sources.
 
 ## Projection modes
 
-  * `fov`: Region within the standard circular mask, in detector coordinates. The source is located at the centre of the image.
-  * `fov_sky`: Region within the standard circular mask, rotated into sky coordinates. The source is located at the centre of the image.
+  * `fov`: Source is within region within the standard circular mask, in detector coordinates. The source is located at the centre of the image.
+  * `fov_sky`: Source is within region within the standard circular mask, rotated into sky coordinates. The source is located at the centre of the image.
   * `det`: Detector coordinates, with the image centred on the centre of the detector.
   * `radial`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`.
   * `radial_sym`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`, rotated by angle of the source on the detector, to make a symmetric PSF for a radial region.

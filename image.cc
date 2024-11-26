@@ -158,3 +158,37 @@ void write_fits_image(const std::string& filename,
   fits_close_file(ff, &status);
   check_fitsio_status(status);
 }
+
+Image<float> read_fits_image(const std::string& filename)
+{
+  int status = 0;
+
+  fitsfile* ff;
+  fits_open_file(&ff, filename.c_str(), READONLY, &status);
+  check_fitsio_status(status);
+
+  int naxis;
+  long naxes[2];
+
+  fits_get_img_dim(ff, &naxis, &status);
+  check_fitsio_status(status);
+
+  if(naxis != 2)
+    throw std::runtime_error("Invalid number of dimensions");
+
+  fits_get_img_size(ff, 2, &naxes[0], &status);
+  check_fitsio_status(status);
+
+  Image<float> outimg(naxes[0], naxes[1]);
+
+  long fpixel[] = {1,1};
+  int anynul = 0;
+  fits_read_pix(ff, TFLOAT, fpixel, naxes[0]*naxes[1], nullptr,
+                &outimg.arr[0], &anynul, &status);
+  check_fitsio_status(status);
+
+  fits_close_file(ff, &status);
+  check_fitsio_status(status);
+
+  return outimg;
+}

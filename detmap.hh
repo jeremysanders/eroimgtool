@@ -8,13 +8,14 @@
 class DetMap
 {
 public:
-  DetMap(fitsfile *ff, int tm);
+  DetMap(fitsfile *ff, int tm, bool detmapmask);
 
   const Image<float>& getMap(double t) { checkCache(t); return cache_map; }
 
 private:
   void checkCache(double t);
   void buildMapImage(double t);
+  void readDetmapMask(int tm);
 
 private:
   size_t num_entries;
@@ -25,7 +26,7 @@ private:
   std::vector<double> tedge;
 
   int cache_ti;
-  Image<float> cache_map;
+  Image<float> init_map, cache_map;
 };
 
 #endif

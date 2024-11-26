@@ -63,6 +63,9 @@ public:
   // arguments for extra mask values
   std::vector<std::array<double,3>> maskpts;
 
+  // mask CALDB detmap mask
+  bool detmapmask;
+
   // number of threads to use
   unsigned threads;
 

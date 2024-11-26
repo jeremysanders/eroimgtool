@@ -5,9 +5,11 @@
 
 #include "detmap.hh"
 #include "common.hh"
+#include "instpar.hh"
 
-DetMap::DetMap(fitsfile *ff, int tm)
+DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask)
   : cache_ti(-1),
+    init_map(CCD_XW, CCD_YW),
     cache_map(CCD_XW, CCD_YW)
 {
   int status = 0;
@@ -51,6 +53,41 @@ DetMap::DetMap(fitsfile *ff, int tm)
 
   std::sort(tedge.begin(), tedge.end());
   tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
+
+  // setup standard detector map, etc
+  if(detmapmask)
+    {
+      readDetmapMask(tm);
+    }
+  else
+    {
+      init_map = 1.f;
+    }
+
+  // remove edges initially
+  for(unsigned y=0; y<CCD_YW; ++y)
+    {
+      init_map(0, y) = 0.f;
+      init_map(CCD_XW-1, y) = 0.f;
+    }
+  for(unsigned x=0; x<CCD_XW; ++x)
+    {
+      init_map(x, 0) = 0.f;
+      init_map(x, CCD_YW-1) = 0.f;
+    }
+
+}
+
+void DetMap::readDetmapMask(int tm)
+{
+  std::string fn = lookup_cal("tm"+std::to_string(tm), "DETMAP");
+  std::printf("  - Opening DETMAP file %s\n", fn.c_str());
+
+  Image<float> map = read_fits_image(fn);
+  if(map.xw != CCD_XW || map.yw != CCD_YW)
+    throw std::runtime_error("Invalid detector map size");
+
+  init_map = map;
 }
 
 void DetMap::checkCache(double t)
@@ -68,7 +105,7 @@ void DetMap::checkCache(double t)
 
 void DetMap::buildMapImage(double t)
 {
-  cache_map = 1.f;
+  cache_map = init_map;
 
   for(size_t i=0; i != num_entries; ++i)
     if(t>=timemin[i] && t<timemax[i])
@@ -83,12 +120,4 @@ void DetMap::buildMapImage(double t)
           for(int x=xlo; x<=xhi; ++x)
             cache_map(x-1, y-1) = 0.f;
       }
-
-  for(int i=0; i<384; i++)
-    {
-      cache_map(0, i) = 0.f;
-      cache_map(383, i) = 0.f;
-      cache_map(i, 0) = 0.f;
-      cache_map(i, 383) = 0.f;
-    }
 }

@@ -76,4 +76,6 @@ void write_fits_image(const std::string& filename,
                       bool overwrite=true,
                       int bitpix=-32);
 
+Image<float> read_fits_image(const std::string& filename);
+
 #endif

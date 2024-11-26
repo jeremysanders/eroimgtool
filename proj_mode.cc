@@ -43,8 +43,7 @@ bool ProjModeAverageFoVSky::sourceValid(Point ccdpt) const
   return rad2 < sqr(192);
 }
 
-Matrix2 ProjModeAverageFoVSky::rotationMatrix(double roll,
-                                                     Point delccd) const
+Matrix2 ProjModeAverageFoVSky::rotationMatrix(double roll, Point delccd) const
 {
   float c = std::cos((270-roll)*DEG2RAD);
   float s = std::sin((270-roll)*DEG2RAD);
@@ -109,8 +108,7 @@ void ProjModeRadialSym::message() const
               rin, rout);
 }
 
-Matrix2 ProjModeRadialSym::rotationMatrix(double roll,
-                                                 Point delccd) const
+Matrix2 ProjModeRadialSym::rotationMatrix(double roll, Point delccd) const
 {
   float theta = -std::atan2(delccd.y, delccd.x);
   float s = std::sin(theta);
