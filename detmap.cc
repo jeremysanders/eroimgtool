@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <stdexcept>
 
 #include "detmap.hh"
 #include "common.hh"
