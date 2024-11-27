@@ -26,6 +26,7 @@ int main(int argc, char** argv)
   std::map<std::string, Pars::projmodetype> projmodemap{
     {"fov", Pars::AVERAGE_FOV},
     {"fov_sky", Pars::AVERAGE_FOV_SKY},
+    {"full", Pars::AVERAGE_FULL},
     {"det", Pars::WHOLE_DET},
     {"radial", Pars::RADIAL},
     {"radial_sym", Pars::RADIAL_SYM},

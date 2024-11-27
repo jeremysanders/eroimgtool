@@ -36,6 +36,15 @@ public:
   void message() const;
 };
 
+// average field of view, in CCD coordinates
+// in this mode, we use all photons from the source, even if the source is outside the FoV
+class ProjModeAverageFull : public ProjMode
+{
+public:
+  bool sourceValid(Point ccdpt) const;
+  void message() const;
+};
+
 // mode for testing - just Det coordinates without tracking source
 class ProjModeDet : public ProjMode
 {

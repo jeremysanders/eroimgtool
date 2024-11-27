@@ -30,7 +30,7 @@ bool ProjModeAverageFoV::sourceValid(Point ccdpt) const
 void ProjModeAverageFoV::message() const
 {
   std::printf("Projection mode\n");
-  std::printf("  - fov: source-relative detector coordinates for std FoV\n");
+  std::printf("  - fov: source-relative det coords for source in std FoV\n");
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -53,7 +53,20 @@ Matrix2 ProjModeAverageFoVSky::rotationMatrix(double roll, Point delccd) const
 void ProjModeAverageFoVSky::message() const
 {
   std::printf("Projection mode\n");
-  std::printf("  - fov_sky: source-relative sky-rotated detector coordinates for std FoV\n");
+  std::printf("  - fov_sky: source-relative sky-rotated det coords for source in std FoV\n");
+}
+
+////////////////////////////////////////////////////////////////////
+
+bool ProjModeAverageFull::sourceValid(Point ccdpt) const
+{
+  return true;
+}
+
+void ProjModeAverageFull::message() const
+{
+  std::printf("Projection mode\n");
+  std::printf("  - full: source-relative detector coordinates\n");
 }
 
 ////////////////////////////////////////////////////////////////////

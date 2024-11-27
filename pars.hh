@@ -34,7 +34,9 @@ public:
 
 public:
   enum projmodetype {
-    AVERAGE_FOV, AVERAGE_FOV_SKY, WHOLE_DET,
+    AVERAGE_FOV, AVERAGE_FOV_SKY,
+    AVERAGE_FULL,
+    WHOLE_DET,
     RADIAL, RADIAL_SYM,
     BOX
   };

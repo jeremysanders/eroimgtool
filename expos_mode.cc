@@ -19,18 +19,21 @@ struct TimeSeg
   float dt;
 };
 
-// find minimum, subtract one, then limit to range minval to maxval
-inline int min4intclamp(float a, float b, float c, float d, int minval, int maxval)
+// min and max of 4 values
+static inline float min4(float a, float b, float c, float d)
 {
-  int x = int( std::floor(std::min(std::min(a, b), std::min(c, d))) );
-  return std::clamp(x-1, minval, maxval);
+  return std::min(std::min(a, b), std::min(c, d));
+}
+static inline float max4(float a, float b, float c, float d)
+{
+  return std::max(std::max(a, b), std::max(c, d));
 }
 
-// find maximum, add one, then limit to range minval to maxval
-inline int max4intclamp(float a, float b, float c, float d, int minval, int maxval)
+// do rectangles defined from x1->x2 and y1->y2 (incl) overlap?
+static inline bool rectoverlap(int ax1, int ax2, int ay1, int ay2,
+                               int bx1, int bx2, int by1, int by2)
 {
-  int x = int( std::ceil(std::max(std::max(a, b), std::max(c, d))) );
-  return std::clamp(x+1, minval, maxval);
+  return ax1<=bx2 && ax2>=bx1 && ay2>=by1 && ay1<=by2;
 }
 
 static void processGTIs(size_t num,
@@ -46,10 +49,10 @@ static void processGTIs(size_t num,
   Point imgcen = pars.imageCentre();
 
   // output image
-  Image<double> img(pars.xw, pars.yw, 0.f);
+  Image<double> img(pars.xw, pars.yw, 0.);
 
   // image during time step
-  Image<float> imgt(pars.xw, pars.yw, 0);
+  Image<float> imgt(pars.xw, pars.yw, 0.f);
 
   for(;;)
     {
@@ -77,14 +80,8 @@ static void processGTIs(size_t num,
       if( ! projmode->sourceValid(srcccd) )
         continue;
 
-      if( timeseg.idx % 500 == 0 )
-        std::printf("Iteration %5.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
-
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
       Point projorigin = projmode->origin(srcccd);
-
-      // detector map for time
-      const Image<float>& dmimg = detmap.getMap(timeseg.t);
 
       // matrix to go from detector -> image, including pixel size
       auto mat = projmode->rotationMatrix(att_roll, delpt);
@@ -94,16 +91,33 @@ static void processGTIs(size_t num,
       auto matrev = projmode->rotationMatrix(-att_roll, delpt);
       matrev.scale(pars.pixsize);
 
-      // find range of coordinates of detector in output image
-      Point ic1 = mat.apply(Point(0,0) - projorigin) + imgcen;
-      Point ic2 = mat.apply(Point(CCD_XW,0) - projorigin) + imgcen;
-      Point ic3 = mat.apply(Point(0,CCD_YW) - projorigin) + imgcen;
-      Point ic4 = mat.apply(Point(CCD_XW,CCD_YW) - projorigin) + imgcen;
+      // find coordinates of detector corners in output image
+      const Point ic1 = mat.apply(Point(0,0) - projorigin) + imgcen;
+      const Point ic2 = mat.apply(Point(CCD_XW,0) - projorigin) + imgcen;
+      const Point ic3 = mat.apply(Point(0,CCD_YW) - projorigin) + imgcen;
+      const Point ic4 = mat.apply(Point(CCD_XW,CCD_YW) - projorigin) + imgcen;
 
-      const int minx = min4intclamp(ic1.x, ic2.x, ic3.x, ic4.x, 0, pars.xw-1);
-      const int maxx = max4intclamp(ic1.x, ic2.x, ic3.x, ic4.x, 0, pars.xw-1);
-      const int miny = min4intclamp(ic1.y, ic2.y, ic3.y, ic4.y, 0, pars.yw-1);
-      const int maxy = max4intclamp(ic1.y, ic2.y, ic3.y, ic4.y, 0, pars.yw-1);
+      // calculate integer bounding box of detector in output image
+      const int ic_xlo = int(std::floor(min4(ic1.x, ic2.x, ic3.x, ic4.x)));
+      const int ic_xhi = int(std::ceil (max4(ic1.x, ic2.x, ic3.x, ic4.x)));
+      const int ic_ylo = int(std::floor(min4(ic1.y, ic2.y, ic3.y, ic4.y)));
+      const int ic_yhi = int(std::ceil (max4(ic1.y, ic2.y, ic3.y, ic4.y)));
+
+      // skip if there's no overlap between detector and output image
+      if(! rectoverlap(ic_xlo, ic_xhi, ic_ylo, ic_yhi, -1, pars.xw, -1, pars.yw))
+        continue;
+
+      if( timeseg.idx % 500 == 0 )
+        std::printf("Iteration %5.1f%% (t=%.1f)\n", timeseg.idx*100./num, timeseg.t);
+
+      // detector map for time
+      const Image<float>& dmimg = detmap.getMap(timeseg.t);
+
+      // these are the ranges to iterate over
+      const int minx = std::clamp(ic_xlo-1, 0, int(pars.xw)-1);
+      const int maxx = std::clamp(ic_xhi+1, 0, int(pars.xw)-1);
+      const int miny = std::clamp(ic_ylo-1, 0, int(pars.yw)-1);
+      const int maxy = std::clamp(ic_yhi+1, 0, int(pars.yw)-1);
 
       // iterate over output image, pixel by pixel
       float* optr = &imgt.arr[0];

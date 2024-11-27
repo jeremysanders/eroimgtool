@@ -88,6 +88,8 @@ std::unique_ptr<ProjMode> Pars::createProjMode() const
       return std::make_unique<ProjModeAverageFoV>();
     case AVERAGE_FOV_SKY:
       return std::make_unique<ProjModeAverageFoVSky>();
+    case AVERAGE_FULL:
+      return std::make_unique<ProjModeAverageFull>();
     case WHOLE_DET:
       return std::make_unique<ProjModeDet>();
     case RADIAL:
