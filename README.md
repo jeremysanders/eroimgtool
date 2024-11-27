@@ -56,7 +56,7 @@ image in sky coordinates to remove nearby sources.
 ## Projection modes
 
   * `full`: Use all photons and time periods. The source is at centre of image, with the output in relative detector coordinates. You will also need the `--detmap` option to match standard eROSITA evtool/expmap behaviour.
-  * `fov`: Source is in the standard circular detector mask. The source is located at the centre of the imag, with the output in relative detector coordinatese.
+  * `fov`: Source is in the standard circular detector mask. The source is located at the centre of the image, with the output in relative detector coordinates.
   * `fov_sky`: Source is in the standard circular detector mask. The source is located at the centre of the image, with the output rotated into sky coordinates.
   * `det`: Detector coordinates, with the image centred on the centre of the detector.
   * `radial`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`.
