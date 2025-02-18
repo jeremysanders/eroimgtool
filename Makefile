@@ -12,6 +12,7 @@ BUILD_DIR = ./build
 SRC = attitude.cc common.cc geom.cc gti.cc coords.cc \
 	image.cc build_poly.cc events.cc instpar.cc mask.cc proj_mode.cc \
 	pars.cc poly_fill.cc deadcor.cc image_mode.cc expos_mode.cc detmap.cc \
+	event_mode.cc \
 	main.cc
 
 # All .o files go to build dir.

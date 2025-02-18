@@ -1,5 +1,5 @@
-#ifndef EVENT_MODE_HH
-#define EVENT_MODE_HH
+#ifndef EXPOS_MODE_HH
+#define EXPOS_MODE_HH
 
 #include "pars.hh"
 

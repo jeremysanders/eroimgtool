@@ -1,10 +1,10 @@
 # eROImageTool
 
-This is a tool to construct images and non-vignetted exposure maps
-from eROSITA event files for calibration purposes, such as PSF
-modelling. The output image is by default in relative detector
-coordinates around a source position. The user can specify a mask
-image in sky coordinates to remove nearby sources.
+This is a tool to construct images, pseudo event files and
+non-vignetted exposure maps from eROSITA event files for calibration
+purposes, such as PSF modelling. The output image is by default in
+relative detector coordinates around a source position. The user can
+specify a mask image in sky coordinates to remove nearby sources.
 
 ## Requirements
  - C++17 compiler (e.g. gcc)
@@ -25,7 +25,7 @@ image in sky coordinates to remove nearby sources.
     Usage: build/eroimgtool [OPTIONS] mode event image
 
     Positionals:
-      mode ENUM:value in {expos->1,image->0} OR {1,0} REQUIRED
+      mode ENUM:value in {event->2,expos->1,image->0} OR {2,1,0} REQUIRED
                                   Program mode
       event TEXT:FILE REQUIRED    Event filename
       image TEXT REQUIRED         Output image filename
@@ -47,11 +47,17 @@ image in sky coordinates to remove nearby sources.
       --gti TEXT:FILE             Additional GTI file to merge
       --xw UINT [512]             X output image size
       --yw UINT [512]             Y output image size
-      --pi-min FLOAT [300]        Minimum PI value (image mode)
-      --pi-max FLOAT [2300]       Maximum PI value (image mode)
+      --pi-min FLOAT [300]        Minimum PI value (image/event mode)
+      --pi-max FLOAT [2300]       Maximum PI value (image/event mode)
       --delta-t FLOAT [0.01]      Time step (s)
       --threads UINT [1]          Number of threads
       --bitpix INT [-32]          How many bitpix to use for output exposure maps
+
+## Modes
+
+  * `image`: Write an output image file containing the projected number of counts in each pixel
+  * `expos`: Write an output exposure map image containing the non-vignetted exposure time in each pixel
+  * `event`: Write transformed events to a FITS table. The table (HDU name EROEVT) has three columns DX, DY and PI. DX and DY are the transformed coordinates relative to the source in detector pixels. PI is taken from the input event file.
 
 ## Projection modes
 

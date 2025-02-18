@@ -13,13 +13,15 @@
 
 #include "image_mode.hh"
 #include "expos_mode.hh"
+#include "event_mode.hh"
 
 int main(int argc, char** argv)
 {
   // whether to run in imaging or exposure mode
   std::map<std::string, Pars::runmodetype> modemap{
     {"image", Pars::IMAGE},
-    {"expos", Pars::EXPOS}
+    {"expos", Pars::EXPOS},
+    {"event", Pars::EVENT}
   };
 
   // map projection mode names to enum values
@@ -61,9 +63,9 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--yw", pars.yw, "Y output image size")
     ->capture_default_str();
-  app.add_option("--pi-min", pars.pimin, "Minimum PI value (image mode)")
+  app.add_option("--pi-min", pars.pimin, "Minimum PI value (image/event mode)")
     ->capture_default_str();
-  app.add_option("--pi-max", pars.pimax, "Maximum PI value (image mode)")
+  app.add_option("--pi-max", pars.pimax, "Maximum PI value (image/event mode)")
     ->capture_default_str();
   app.add_option("--delta-t", pars.deltat, "Time step (s)")
     ->capture_default_str();
@@ -92,6 +94,9 @@ int main(int argc, char** argv)
           break;
         case Pars::EXPOS:
           exposMode(pars);
+          break;
+        case Pars::EVENT:
+          eventMode(pars);
           break;
         }
     }

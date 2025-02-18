@@ -41,7 +41,7 @@ public:
     BOX
   };
 
-  enum runmodetype : int { IMAGE, EXPOS };
+  enum runmodetype : int { IMAGE, EXPOS, EVENT };
 
 public:
   // Mode to use
