@@ -75,11 +75,7 @@ static void processGTIs(size_t num,
       // get ccd coordinates of source
       auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(timeseg.src_ra, timeseg.src_dec);
 
-      // skip if source is outsite allowed region
       Point srcccd(src_ccdx, src_ccdy);
-      if( ! projmode->sourceValid(srcccd) )
-        continue;
-
       Point delpt = srcccd - Point(instpar.x_ref, instpar.y_ref);
       Point projorigin = projmode->origin(srcccd);
 
@@ -163,6 +159,45 @@ static void processGTIs(size_t num,
 
 }
 
+static std::vector<TimeSeg> applySampling(const std::vector<TimeSeg>& timesegs, int samples)
+{
+  std::printf("  - making %d samples in time\n", samples);
+
+  // get total time in segments
+  double tott = 0;
+  for(size_t i=0; i != timesegs.size(); ++i)
+    tott += double(timesegs[i].dt);
+  const double deltat = tott / samples; // size of new segments
+
+  // evenly sample along cumulative time
+  size_t ts = 0; // current time segment
+  double tsum = double(timesegs[ts].dt); // total time up to current time segment
+
+  std::vector<TimeSeg> newsegs;
+  for(int i=0; i<samples; ++i)
+    {
+      // cumulative time of new segment
+      const double t = (i+0.5) * deltat;
+
+      // find corresponding old segment in cumulative time
+      while(t>tsum)
+        {
+          ++ts;
+          tsum += double(timesegs[ts].dt);
+        }
+
+      // create new segment
+      newsegs.emplace_back( TimeSeg({
+            timesegs[ts].src_ra,
+            timesegs[ts].src_dec,
+            size_t(i),
+            timesegs[ts].t,
+            float(deltat)
+            }) );
+    }
+  return newsegs;
+}
+
 void exposMode(const Pars& pars)
 {
   InstPar instpar = pars.loadInstPar();
@@ -170,10 +205,13 @@ void exposMode(const Pars& pars)
 
   Mask mask = pars.loadMask();
 
-  pars.createProjMode()->message();
+  auto projmode = pars.createProjMode();
+  projmode->message();
   pars.showSources();
 
   std::printf("Building exposure map\n");
+
+  CoordConv coordconv(instpar);
 
   // put sources and times in vector
   std::vector<TimeSeg> timesegs;
@@ -190,12 +228,33 @@ void exposMode(const Pars& pars)
       for(int ti=0; ti<numt; ++ti)
         {
           double t = tstart + (ti+0.5)*deltat;
+
+          auto [att_ra, att_dec, att_roll] = att.interpolate(t);
+          coordconv.updatePointing(att_ra, att_dec, att_roll);
+
           float deadcf = deadc.interpolate(t);
           for(auto& srcpos : pars.sources)
-            timesegs.emplace_back( TimeSeg({
-                  srcpos[0], srcpos[1], timesegs.size(), t, float(deltat*deadcf)}) );
-        }
+            {
+              auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(srcpos[0], srcpos[1]);
+
+              // add time if source is inside region
+              Point srcccd(src_ccdx, src_ccdy);
+              if( projmode->sourceValid(srcccd) )
+                {
+                  timesegs.emplace_back( TimeSeg({
+                        srcpos[0], srcpos[1],
+                        timesegs.size(), t, float(deltat*deadcf)}) );
+                }
+            } // sources
+        } // times in GTI
+    } // GTIs
+
+  // sample if requested, but only if it results in fewer calculations
+  if(pars.samples > 0 && pars.samples < int(timesegs.size()))
+    {
+      timesegs = applySampling(timesegs, pars.samples);
     }
+
   // we process them in order of time, so reverse so we pop from back
   std::reverse(timesegs.begin(), timesegs.end());
 

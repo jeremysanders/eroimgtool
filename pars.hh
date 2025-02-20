@@ -82,6 +82,9 @@ public:
   // time delta for exposure map
   double deltat;
 
+  // sample mode for exposure map
+  int samples;
+
   // filenames
   std::string evt_fn;
   std::string mask_fn;

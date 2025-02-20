@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -148,6 +149,7 @@ void eventMode(const Pars& pars)
   // make fits file and write data
   std::printf("  - writing output events to %s\n", pars.out_fn.c_str());
 
+  std::filesystem::remove(pars.out_fn);
   int status = 0;
   fitsfile* ff;
   fits_create_file(&ff, pars.out_fn.c_str(), &status);

@@ -16,7 +16,8 @@ Pars::Pars()
   xw(512), yw(512),
   pixsize(1),
   bitpix(-32),
-  deltat(0.01)
+  deltat(0.01),
+  samples(-1)
 {
 }
 

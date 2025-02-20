@@ -69,6 +69,8 @@ int main(int argc, char** argv)
     ->capture_default_str();
   app.add_option("--delta-t", pars.deltat, "Time step (s)")
     ->capture_default_str();
+  app.add_option("--samples", pars.samples, "Activate sampling for exposure map with number of samples given")
+    ->capture_default_str();
   app.add_option("--threads", pars.threads, "Number of threads")
     ->capture_default_str();
   app.add_option("--bitpix", pars.bitpix, "How many bitpix to use for output exposure maps")
