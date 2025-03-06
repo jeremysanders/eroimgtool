@@ -67,16 +67,9 @@ static void processEvents(std::vector<Chunk>& chunks,
           if( detmap.getMap(events.time[i])(events.rawx[i]-1, events.rawy[i]-1) == 0.f )
             continue;
 
-          Point evtpt(events.ccdx[i], events.ccdy[i]);
-
           // get attitude at time of event
           auto [att_ra, att_dec, att_roll] = att.interpolate(events.time[i]);
           coordconv.updatePointing(att_ra, att_dec, att_roll);
-
-          // ignore masked regions
-          PolyVec ccd_maskedpolys(mask.as_ccd_poly(coordconv));
-          if( is_inside(ccd_maskedpolys, evtpt) )
-            continue;
 
           // get ccd coordinates of source
           auto [src_ccdx, src_ccdy] = coordconv.radec2ccd(chunk.src_ra, chunk.src_dec);
@@ -84,6 +77,14 @@ static void processEvents(std::vector<Chunk>& chunks,
           // skip if source is outsite allowed region
           Point srcccd(src_ccdx, src_ccdy);
           if( ! projmode->sourceValid(srcccd) )
+            continue;
+
+          // ccd coordinate of event
+          Point evtpt(events.ccdx[i], events.ccdy[i]);
+
+          // ignore masked regions
+          PolyVec ccd_maskedpolys(mask.as_ccd_poly(coordconv));
+          if( is_inside(ccd_maskedpolys, evtpt) )
             continue;
 
           // compute relative coordinates of photon
@@ -114,14 +115,23 @@ void eventMode(const Pars& pars)
 
   std::printf("Building event list\n");
 
-  // build up a list of sources and chunks of photons
-  constexpr size_t chunk_size = 400;
+  // build up a list of sources and chunks (ranges) of photons
   std::vector<Chunk> chunks;
-  for(size_t i=0; i < events.num_entries; i += chunk_size)
-    for(auto& srcpos : pars.sources)
-      chunks.push_back({srcpos[0], srcpos[1], i, chunk_size});
-  // we want it reversed, as vector processing starts from the end
-  std::reverse(chunks.begin(), chunks.end());
+  if(pars.threads <= 1)
+    {
+      for(auto& srcpos : pars.sources)
+        chunks.push_back({srcpos[0], srcpos[1], 0, events.num_entries});
+    }
+  else
+    {
+      constexpr size_t chunk_size = 400;
+      for(size_t i=0; i < events.num_entries; i += chunk_size)
+        for(auto& srcpos : pars.sources)
+          chunks.push_back({srcpos[0], srcpos[1], i, chunk_size});
+
+      // we want it reversed, as vector processing starts from the end
+      std::reverse(chunks.begin(), chunks.end());
+    }
 
   std::vector<EventOut> evts_out;
   std::mutex mutex;
