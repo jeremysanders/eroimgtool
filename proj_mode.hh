@@ -63,6 +63,7 @@ public:
   void message() const;
 
   float rin, rout;
+  float cx, cy;
 };
 
 class ProjModeRadialSym : public ProjModeRadial

@@ -65,7 +65,7 @@ specify a mask image in sky coordinates to remove nearby sources.
   * `fov`: Source is in the standard circular detector mask. The source is located at the centre of the image, with the output in relative detector coordinates.
   * `fov_sky`: Source is in the standard circular detector mask. The source is located at the centre of the image, with the output rotated into sky coordinates.
   * `det`: Detector coordinates, with the image centred on the centre of the detector.
-  * `radial`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`.
+  * `radial`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`. Two further arguments can be given for the centre (default 192,192).
   * `radial_sym`: Region within the radial range (Rin<=r<Rout) given by `--proj-args Rin Rout`, rotated by angle of the source on the detector, to make a symmetric PSF for a radial region.
   * `box`: Region within detector coordinates (x1<=x<x2, y1<=y<y2), given by `--proj-args x1 y1 x2 y2`.
 

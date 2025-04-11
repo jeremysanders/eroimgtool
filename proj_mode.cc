@@ -92,16 +92,27 @@ void ProjModeDet::message() const
 
 ProjModeRadial::ProjModeRadial(const std::vector<float>& args)
 {
-  if(args.size() != 2)
-    throw std::runtime_error("Two parameters are required for radial projection (rin,rout)");
+  if(args.size() != 2 && args.size() != 4)
+    throw std::runtime_error("2 or 4 parameters are required for radial projection (rin,rout) or (rin,rout,cx,cy)");
 
   rin = args[0];
   rout = args[1];
+
+  if(args.size() == 4)
+    {
+      cx = args[2];
+      cy = args[3];
+    }
+  else
+    {
+      cx = 192;
+      cy = 192;
+    }
 }
 
 bool ProjModeRadial::sourceValid(Point ccdpt) const
 {
-  float rad = std::sqrt(sqr(ccdpt.x-192) + sqr(ccdpt.y-192));
+  float rad = std::sqrt(sqr(ccdpt.x-cx) + sqr(ccdpt.y-cy));
   return (rad >= rin) && (rad < rout);
 }
 
