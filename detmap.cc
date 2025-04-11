@@ -8,7 +8,7 @@
 #include "common.hh"
 #include "instpar.hh"
 
-DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask)
+DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask, bool shadowmask)
   : cache_ti(-1),
     init_map(CCD_XW, CCD_YW),
     cache_map(CCD_XW, CCD_YW)
@@ -77,6 +77,13 @@ DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask)
       init_map(x, CCD_YW-1) = 0.f;
     }
 
+  // remove shadowed area from readout if requested
+  if(shadowmask)
+    {
+      for(unsigned y=0; y<15; ++y)
+        for(unsigned x=0; x<CCD_XW; ++x)
+          init_map(x,y) = 0.f;
+    }
 }
 
 void DetMap::readDetmapMask(int tm)
@@ -111,14 +118,23 @@ void DetMap::buildMapImage(double t)
   for(size_t i=0; i != num_entries; ++i)
     if(t>=timemin[i] && t<timemax[i])
       {
-        // expand bad pixel by 1
-        int ylo = std::max(rawy[i]-1, 1);
-        int yhi = std::min(rawy[i]+yextent[i]+1-1, int(CCD_YW));
-        int xlo = std::max(rawx[i]-1, 1);
-        int xhi = std::min(rawx[i]+1, int(CCD_XW));
+        int ylo = rawy[i]-1;
+        int yhi = rawy[i]+yextent[i]-1;
+        int x = rawx[i]-1;
 
         for(int y=ylo; y<=yhi; ++y)
-          for(int x=xlo; x<=xhi; ++x)
-            cache_map(x-1, y-1) = 0.f;
+          {
+            // zero pixel
+            cache_map(x, y) = 0.f;
+            // zero surrounding pixels +-1 in x or y (not both)
+            if(x-1>=0)
+              cache_map(x-1,y) = 0.f;
+            if(x+1<int(CCD_XW))
+              cache_map(x+1,y) = 0.f;
+            if(y-1>=0)
+              cache_map(x,y-1) = 0.f;
+            if(y+1<int(CCD_YW))
+              cache_map(x,y+1) = 0.f;
+          }
       }
 }

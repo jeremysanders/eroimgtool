@@ -12,6 +12,7 @@ Pars::Pars()
   pimin(300), pimax(2300),
   projmode(AVERAGE_FOV),
   detmapmask(false),
+  shadowmask(false),
   threads(1),
   xw(512), yw(512),
   pixsize(1),
@@ -39,7 +40,7 @@ Pars::loadEventFile() const
   events.filter_gti(gti);
 
   AttitudeTable att(ff, tm);
-  DetMap detmap(ff, tm, detmapmask);
+  DetMap detmap(ff, tm, detmapmask, shadowmask);
   DeadCorTable deadc(ff, tm);
 
   fits_close_file(ff, &status);

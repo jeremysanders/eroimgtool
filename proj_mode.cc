@@ -119,8 +119,8 @@ bool ProjModeRadial::sourceValid(Point ccdpt) const
 void ProjModeRadial::message() const
 {
   std::printf("Projection mode\n");
-  std::printf("  - radial: radial range of detector (%g to %g pix)\n",
-              rin, rout);
+  std::printf("  - radial: radial range of detector (%g to %g pix), centre (%g, %g)\n",
+              rin, rout, cx, cy);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -128,8 +128,8 @@ void ProjModeRadial::message() const
 void ProjModeRadialSym::message() const
 {
   std::printf("Projection mode\n");
-  std::printf("  - radial symmetric: radial range of detector (%g to %g pix)\n",
-              rin, rout);
+  std::printf("  - radial symmetric: radial range of detector (%g to %g pix), centre (%g, %g)\n",
+              rin, rout, cx, cy);
 }
 
 Matrix2 ProjModeRadialSym::rotationMatrix(double roll, Point delccd) const

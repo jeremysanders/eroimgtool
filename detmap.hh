@@ -8,7 +8,7 @@
 class DetMap
 {
 public:
-  DetMap(fitsfile *ff, int tm, bool detmapmask);
+  DetMap(fitsfile *ff, int tm, bool detmapmask, bool shadowmask);
 
   const Image<float>& getMap(double t) { checkCache(t); return cache_map; }
 

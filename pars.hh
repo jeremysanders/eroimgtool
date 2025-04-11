@@ -68,6 +68,9 @@ public:
   // mask CALDB detmap mask
   bool detmapmask;
 
+  // additional mask for shadow region
+  bool shadowmask;
+
   // number of threads to use
   unsigned threads;
 
