@@ -93,6 +93,7 @@ public:
   std::string mask_fn;
   std::string out_fn;
   std::string gti_fn;
+  std::string bpix_fn;
 };
 
 #endif

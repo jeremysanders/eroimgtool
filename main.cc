@@ -56,6 +56,8 @@ int main(int argc, char** argv)
     ->check(CLI::ExistingFile);
   app.add_option("--mask-pts", pars.maskpts, "Extra masks (list ra,dec,rad_pix)")
     ->delimiter(',');
+  app.add_option("--bpix", pars.bpix_fn, "Additional bad pixel table")
+    ->check(CLI::ExistingFile);
   app.add_flag("--detmap", pars.detmapmask, "Add CALDB DETMAP mask");
   app.add_flag("--shadowmask", pars.shadowmask, "Add shadow DETMAP mask");
   app.add_option("--gti", pars.gti_fn, "Additional GTI file to merge")

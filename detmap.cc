@@ -8,53 +8,13 @@
 #include "common.hh"
 #include "instpar.hh"
 
-DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask, bool shadowmask)
-  : cache_ti(-1),
+DetMap::DetMap(int _tm, bool detmapmask, bool shadowmask)
+  : tm(_tm),
+    num_entries(0),
+    cache_ti(-1),
     init_map(CCD_XW, CCD_YW),
     cache_map(CCD_XW, CCD_YW)
 {
-  int status = 0;
-
-  std::string hduname = std::string("BADPIX") + std::to_string(tm);
-  std::printf("  - Opening bad pixel extension %s\n", hduname.c_str());
-  move_fits_hdu(ff, hduname.c_str());
-
-  long nrows;
-  fits_get_num_rows(ff, &nrows, &status);
-  check_fitsio_status(status);
-
-  num_entries = nrows;
-  rawx.resize(num_entries);
-  rawy.resize(num_entries);
-  yextent.resize(num_entries);
-  timemin.resize(num_entries);
-  timemax.resize(num_entries);
-
-  read_fits_column(ff, "RAWX", TINT, nrows, &rawx[0]);
-  read_fits_column(ff, "RAWY", TINT, nrows, &rawy[0]);
-  read_fits_column(ff, "YEXTENT", TINT, nrows, &yextent[0]);
-  read_fits_column(ff, "TIMEMIN", TDOUBLE, nrows, &timemin[0]);
-  read_fits_column(ff, "TIMEMAX", TDOUBLE, nrows, &timemax[0]);
-
-  std::printf("    - successfully read %ld entries\n", nrows);
-
-  // replace times with inf or -inf as appropriate
-  const double inf = std::numeric_limits<double>::infinity();
-  for(size_t i=0; i != num_entries; ++i)
-    {
-      if(!std::isfinite(timemin[i])) timemin[i] = -inf;
-      if(!std::isfinite(timemax[i])) timemax[i] = +inf;
-    }
-
-  // get list of times where things change
-  tedge.push_back(-inf);
-  tedge.insert(tedge.end(), timemin.begin(), timemin.end());
-  tedge.insert(tedge.end(), timemax.begin(), timemax.end());
-  tedge.push_back(+inf);
-
-  std::sort(tedge.begin(), tedge.end());
-  tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
-
   // setup standard detector map, etc
   if(detmapmask)
     {
@@ -84,6 +44,75 @@ DetMap::DetMap(fitsfile *ff, int tm, bool detmapmask, bool shadowmask)
         for(unsigned x=0; x<CCD_XW; ++x)
           init_map(x,y) = 0.f;
     }
+}
+
+void DetMap::read(fitsfile *ff)
+{
+  const double inf = std::numeric_limits<double>::infinity();
+
+  int status = 0;
+
+  std::string hduname = std::string("BADPIX") + std::to_string(tm);
+  std::printf("  - Opening bad pixel extension %s\n", hduname.c_str());
+  move_fits_hdu(ff, hduname.c_str());
+
+  long nrows;
+  fits_get_num_rows(ff, &nrows, &status);
+  check_fitsio_status(status);
+
+  if( nrows > 0 )
+    {
+      // read new rows at end of current list
+      size_t start = num_entries;
+      num_entries += nrows;
+
+      rawx.resize(num_entries);
+      rawy.resize(num_entries);
+      yextent.resize(num_entries);
+      timemin.resize(num_entries);
+      timemax.resize(num_entries);
+
+      read_fits_column(ff, "RAWX", TINT, nrows, &rawx[start]);
+      read_fits_column(ff, "RAWY", TINT, nrows, &rawy[start]);
+      read_fits_column(ff, "YEXTENT", TINT, nrows, &yextent[start]);
+      read_fits_column(ff, "TIMEMIN", TDOUBLE, nrows, &timemin[start]);
+      read_fits_column(ff, "TIMEMAX", TDOUBLE, nrows, &timemax[start]);
+
+      // replace times with inf or -inf as appropriate
+      for(size_t i=start; i != num_entries; ++i)
+        {
+          if(!std::isfinite(timemin[i])) timemin[i] = -inf;
+          if(!std::isfinite(timemax[i])) timemax[i] = +inf;
+        }
+
+      std::printf("    - successfully read %ld entries (total %ld entries)\n",
+                  nrows, num_entries);
+    }
+
+  // get list of times where things change
+  tedge.clear();
+  tedge.push_back(-inf);
+  tedge.insert(tedge.end(), timemin.begin(), timemin.end());
+  tedge.insert(tedge.end(), timemax.begin(), timemax.end());
+  tedge.push_back(+inf);
+
+  std::sort(tedge.begin(), tedge.end());
+  tedge.erase( std::unique(tedge.begin(), tedge.end()), tedge.end() );
+}
+
+void DetMap::read(const std::string& fn)
+{
+  int status = 0;
+  fitsfile* ff;
+
+  std::printf("Opening bad pixel file %s\n", fn.c_str());
+  fits_open_file(&ff, fn.c_str(), READONLY, &status);
+  check_fitsio_status(status);
+
+  read(ff);
+
+  fits_close_file(ff, &status);
+  check_fitsio_status(status);
 }
 
 void DetMap::readDetmapMask(int tm)
@@ -119,7 +148,7 @@ void DetMap::buildMapImage(double t)
     if(t>=timemin[i] && t<timemax[i])
       {
         int ylo = rawy[i]-1;
-        int yhi = rawy[i]+yextent[i]-1;
+        int yhi = rawy[i]-1+yextent[i]-1;
         int x = rawx[i]-1;
 
         for(int y=ylo; y<=yhi; ++y)

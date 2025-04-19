@@ -40,7 +40,8 @@ Pars::loadEventFile() const
   events.filter_gti(gti);
 
   AttitudeTable att(ff, tm);
-  DetMap detmap(ff, tm, detmapmask, shadowmask);
+  DetMap detmap(tm, detmapmask, shadowmask);
+  detmap.read(ff);
   DeadCorTable deadc(ff, tm);
 
   fits_close_file(ff, &status);
@@ -58,6 +59,11 @@ Pars::loadEventFile() const
       gti &= gti2;
       std::printf("  - merged GTIs to make %ld elements\n", gti.num);
       events.filter_gti(gti);
+    }
+
+  if(!bpix_fn.empty())
+    {
+      detmap.read(bpix_fn);
     }
 
   return std::make_tuple(events, gti, att, detmap, deadc);

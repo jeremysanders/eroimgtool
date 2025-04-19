@@ -1,6 +1,7 @@
 #ifndef DETMAP_HH
 #define DETMAP_HH
 
+#include <string>
 #include <vector>
 #include <fitsio.h>
 #include "image.hh"
@@ -8,7 +9,17 @@
 class DetMap
 {
 public:
-  DetMap(fitsfile *ff, int tm, bool detmapmask, bool shadowmask);
+  // create detector mask
+  // tm: TM number
+  // detmapmask: mask using standard CALDB detector mask
+  // shadowmask: mask out bottom pixels in readout shadow area
+  DetMap(int _tm, bool detmapmask, bool shadowmask);
+
+  // read table from open fits file
+  void read(fitsfile *ff);
+
+  // read table from fits file given
+  void read(const std::string& filename);
 
   const Image<float>& getMap(double t) { checkCache(t); return cache_map; }
 
@@ -18,6 +29,8 @@ private:
   void readDetmapMask(int tm);
 
 private:
+  int tm;
+
   size_t num_entries;
   std::vector<int> rawx, rawy, yextent;
   std::vector<double> timemin, timemax;
