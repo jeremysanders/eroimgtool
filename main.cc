@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   Pars pars;
 
   app.add_option("--sources", pars.sources, "List of RA,Dec for sources")
-    ->delimiter(',')->expected(1,1000)->required();
+    ->delimiter(',')->expected(1,10000000)->required();
   app.add_option("--proj", pars.projmode, "Projection mode")
     ->transform(CLI::CheckedTransformer(projmodemap, CLI::ignore_case))
     ->capture_default_str();
@@ -87,6 +87,9 @@ int main(int argc, char** argv)
     ->check(CLI::ExistingFile);
   app.add_option("image", pars.out_fn, "Output image filename")
     ->required();
+
+  std::string config_file;
+  app.set_config("--config", config_file, "Read options from a config file", false);
 
   CLI11_PARSE(app, argc, argv);
 
